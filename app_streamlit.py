@@ -214,9 +214,11 @@ if uploaded_file is not None:
     #stringio = StringIO(uploaded_file.getvalue())#.decode("utf-8")
     #st.write(stringio)
     df =pd.read_excel(uploaded_file)
+    #st.dataframe(df)
+    #print(df.columns)
     df = df[df["KEY"].str.contains(find_cod)]
     show_dff = df.copy()
-    show_dff = show_dff[['KEY','FECHARECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','KILOS BRUTOS','KILOS NETOS','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
+    show_dff = show_dff[['KEY','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
     gb = GridOptionsBuilder.from_dataframe(show_dff)
     gb.configure_selection(selection_mode="single", use_checkbox=True)
     gb.configure_column("KEY", width=400)
@@ -231,7 +233,20 @@ if uploaded_file is not None:
     )
     try:
         df = df[df["KEY"]==grid_response['selected_rows']["KEY"].values[0]]
+        df["N° PALLET"] = df["N° PALLET"].fillna("-")
+        #df["KILOS NETO"]= df["KILOS NETO"].round(2)
+        #df["KILOS BRUTO"]= df["KILOS BRUTO"].round(2)
+        #df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].round(2)
+        ##N° TARJETA PALLET
+        value_tarjeta_pallet = df["N° TARJETA PALLET"].values[0]
         
+        # Obtener la lista de KILOS NETO para la tarjeta seleccionada
+        tajet_pallet_dff = show_dff[show_dff["N° TARJETA PALLET"]==value_tarjeta_pallet]
+        total_kilos_neto = round(sum(list(tajet_pallet_dff["KILOS NETO"])),2)
+        total_kilos_bruto = round(sum(list(tajet_pallet_dff["KILOS BRUTO"])),2)
+        total_kilos_campo = round(sum(list(tajet_pallet_dff["PESO NETO CAMPO"])),2)
+        total_num_jabas = round(sum(list(tajet_pallet_dff["N° JABAS"])),2)
+        total_num_jarras = round(sum(list(tajet_pallet_dff["N° JARRAS"])),2)
         
         #data_for_qr = {}
         key_qr = df["KEY"].values[0]
@@ -244,12 +259,12 @@ if uploaded_file is not None:
         guia = df["GUIA"].values[0]
         viaje = df["N° VIAJE"].values[0]
         num_tarja = df["N° TARJETA PALLET"].values[0]
-        fecha= df["FECHARECEPCION"].values[0]
-        peso_bruto= df["KILOS BRUTOS"].values[0]
-        num_jabas = df["N° JABAS"].values[0]
-        num_jarras = df["N° JARRAS"].values[0]
-        peso_campo = df["PESO NETO CAMPO"].values[0]
-        peso_neto = df["KILOS NETOS"].values[0]
+        fecha= df["FECHA RECEPCION"].values[0]
+        peso_bruto= total_kilos_bruto
+        num_jabas = total_num_jabas
+        num_jarras = total_num_jarras
+        peso_campo = total_kilos_campo
+        peso_neto = total_kilos_neto
         tunel_enfriamiento = ""
         qr_img = generar_qr(key_qr)
         datos = {
