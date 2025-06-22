@@ -17,7 +17,7 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     total_block_height = page_height / 2
     
     # Reducimos la altura del recuadro principal y dejamos espacio abajo para la tarja
-    boleta_height = 300
+    boleta_height = 350
     boleta_width = width - 50  # Margen horizontal de 25 en cada lado
     boleta_left = 25
     
@@ -29,19 +29,39 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     c.setStrokeColorRGB(0, 0, 0) # Color negro para el borde
     c.setLineWidth(2)
     c.rect(boleta_left, boleta_bottom, boleta_width, boleta_height)
+
+    # --- Líneas de división ---
+    c.setLineWidth(1)
+    # Línea vertical para separar QR del resto
+    line_v_x = boleta_left + 165 
+    c.line(line_v_x, boleta_bottom, line_v_x, boleta_bottom + boleta_height)
+    # Línea horizontal para separar cabecera de datos
+    line_h_y = boleta_bottom + boleta_height - 70
+    c.line(line_v_x, line_h_y, boleta_left + boleta_width, line_h_y)
+
     #c.setStrokeColorRGB(0, 0, 0) # Restaurar color negro para otras líneas
 
     # --- Logo ---
-    logo_w, logo_h = 35, 40
-    logo_x = boleta_left +10
-    logo_y = boleta_bottom + boleta_height - logo_h - 10
+    logo_w, logo_h = 50, 50
+    # Posición del recuadro del logo
+    logo_box_x = line_v_x + 10
+    logo_box_y = line_h_y + 10
+    # Dibujar el recuadro para el logo
+    c.setLineWidth(1)
+    c.rect(logo_box_x, logo_box_y, logo_w, logo_h)
+    
     if os.path.exists(logo_path):
-        c.drawImage(logo_path, 190, logo_y, width=logo_w, height=logo_h, mask='auto')
+        # Centrar el logo dentro de su recuadro
+        c.drawImage(logo_path, logo_box_x, logo_box_y, width=logo_w, height=logo_h, mask='auto')
+    else:
+        # Si no hay logo, escribir "LOGO" como placeholder
+        c.setFont("Helvetica", 12)
+        c.drawCentredString(logo_box_x + logo_w / 2, logo_box_y + (logo_h - 12) / 2, "LOGO")
 
     # --- QR ---
-    qr_size = 150 # Tamaño ajustado
-    qr_x = logo_x
-    qr_y = logo_y - qr_size - 0
+    qr_size = 162 # Tamaño ajustado
+    qr_x = boleta_left + 1
+    qr_y = boleta_bottom + boleta_height - qr_size - 95
     qr_buffer = io.BytesIO()
     if hasattr(qr_img, 'get_image'):
         qr_img = qr_img.get_image()
@@ -49,36 +69,41 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     qr_buffer.seek(0)
     c.drawImage(ImageReader(qr_buffer), qr_x, qr_y, width=qr_size, height=qr_size)
 
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica",11)
     text_qr = datos['key_qr']
-    text_width = c.stringWidth(text_qr, "Helvetica", 8)
+    text_width = c.stringWidth(text_qr, "Helvetica", 11)
     c.drawString(qr_x + (qr_size - text_width) / 2, qr_y - 10, text_qr)
 
     # --- Cabecera ---
-    header_x_center = boleta_left + boleta_width / 2 + 50
+    header_x_center = boleta_left + boleta_width / 2 + 60
     header_y_top = boleta_bottom + boleta_height - 15
-    c.setFont("Helvetica-Bold", 12)
-    c.drawCentredString(header_x_center, header_y_top, "FORMATO")
+    c.setFont("Helvetica-Bold", 13)
+    c.drawCentredString(header_x_center, header_y_top- 10, "FORMATO")
     c.setFont("Helvetica", 9)
-    c.drawCentredString(header_x_center, header_y_top - 12, "BOLETA DE RECEPCION DE MATERIA PRIMA")
+    c.drawCentredString(header_x_center, header_y_top - 30, "BOLETA DE RECEPCION DE MATERIA PRIMA")
     
     # Código, versión, fecha
     info_x = boleta_left + boleta_width - 95
     info_y = header_y_top +5
     c.setFont("Helvetica", 7)
     c.drawString(info_x, info_y, "Código: APP - CC-FPP 002")
-    c.drawString(info_x, info_y - 9, "Versión : 01")
+    c.drawString(info_x, info_y - 9, "Versión : 01-2")
     c.drawString(info_x, info_y - 18, f"Fecha : {fecha_actual}")
 
     # --- Tabla de datos ---
-    table_left = boleta_left + 160 # Más espacio para el QR
-    table_top = boleta_bottom + boleta_height -70
+    table_left = boleta_left + 170 # Más espacio para el QR
+    table_top = boleta_bottom + boleta_height -100
     col1_x = table_left
-    col2_x = table_left + 210
-    row_height = 21
+    col2_x = table_left + 230
+    row_height = 23
     font_size = 8
+    font_size_big=11
     bold = "Helvetica-Bold"
     normal = "Helvetica"
+    
+    # Línea vertical entre columnas de datos
+    line_v2_x = col2_x - 10
+    c.line(line_v2_x, boleta_bottom, line_v2_x, line_h_y)
     
     # --- Columna 1 ---
     y = table_top
@@ -102,91 +127,94 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "FUNDO:")
-    c.setFont(normal, font_size)
+    c.setFont(normal, 9)
     c.drawString(col1_x + 90, y, f"{datos['fundo']}")
     
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "VARIEDAD:")
-    c.setFont(normal, font_size)
+    c.setFont(normal, 9)
     c.drawString(col1_x + 90, y, f"{datos['variedad']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "Nº PALLET:")
-    c.setFont(normal, font_size)
+    c.setFont(bold, 9)
     c.drawString(col1_x + 90, y, f"{datos['num_pallet']}")
     
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "GUIA:")
-    c.setFont(normal, font_size)
+    c.setFont(normal, 9)
     c.drawString(col1_x + 90, y, f"{datos['guia']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "VIAJE:")
-    c.setFont(normal, font_size)
+    c.setFont(normal, 9)
     c.drawString(col1_x + 90, y, f"{datos['viaje']}")
 
     # --- Columna 2 ---
     y = table_top
     c.setFont(bold, font_size)
     c.drawString(col2_x, y, "FECHA:")
-    c.setFont(normal, font_size)
-    c.drawString(col2_x + 90, y, f"{datos['fecha']}")
+    c.setFont(bold, 14)
+    c.drawString(col2_x + 50, y, f"{datos['fecha']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col2_x, y, "P. BRUTO:")
-    c.setFont(normal, font_size)
-    c.drawString(col2_x + 90, y, f"{datos['peso_bruto']}")
+    c.setFont(normal, 12)
+    c.drawString(col2_x + 70, y, f"{datos['peso_bruto']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col2_x, y, "Nº JABAS:")
-    c.setFont(normal, font_size)
-    c.drawString(col2_x + 90, y, f"{datos['num_jabas']}")
+    c.setFont(normal, 12)
+    c.drawString(col2_x + 70, y, f"{datos['num_jabas']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col2_x, y, "Nº JARRAS:")
-    c.setFont(normal, font_size)
-    c.drawString(col2_x + 90, y, f"{datos['num_jarras']}")
+    c.setFont(normal, 12)
+    c.drawString(col2_x + 70, y, f"{datos['num_jarras']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col2_x, y, "P. CAMPO:")
-    c.setFont(normal, font_size)
-    c.drawString(col2_x + 90, y, f"{datos['peso_campo']}")
+    c.setFont(normal, 12)
+    c.drawString(col2_x + 70, y, f"{datos['peso_campo']}")
 
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col2_x, y, "P. NETO:")
-    c.setFont(bold, font_size + 2) # Resaltado
-    c.drawString(col2_x + 90, y, f"{datos['peso_neto']}")
+    c.setFont(bold, 13) # Resaltado
+    c.drawString(col2_x + 70, y, f"{datos['peso_neto']}")
     
-    y -= row_height
-    c.setFont(bold, font_size)
-    c.drawString(col2_x, y, "TUNEL DE ENFRIAMIENTO:")
-    c.setFont(normal, font_size)
-    c.drawString(col2_x + 90, y, f"{datos['tunel_enfriamiento']}")
+    # --- Línea horizontal sobre TUNEL DE ENFRIAMIENTO ---
+    line_h2_y = y - 10
+    c.line(line_v2_x, line_h2_y, boleta_left + boleta_width, line_h2_y)
 
+    y -= (row_height + 15) # Espacio extra para la nueva sección
+    
+    c.setFont(bold, 10)
+    # Centrar el texto "TUNEL DE ENFRIAMIENTO" en el espacio disponible
+    text_tunel = "TUNEL DE ENFRIAMIENTO:"
+    text_tunel_width = c.stringWidth(text_tunel, bold, 10)
+    # El ancho de la sección es (boleta_left + boleta_width) - line_v2_x
+    section_width = (boleta_left + boleta_width) - line_v2_x
+    c.drawString(line_v2_x + (section_width - text_tunel_width) / 2, y, text_tunel)
+    
     # --- N° TARJA Y FIRMA  ---
     tarja_y = boleta_bottom + 30 # Posición debajo del recuadro
     
-    c.setFont(bold, 12)
+    c.setFont(bold, 15)
     c.drawString(table_left, tarja_y, "N° TARJA:")
-    c.setFont(bold, 14)
+    c.setFont(bold, 15)
     c.drawString(table_left + 90, tarja_y, f"{datos['num_tarja']}")
     
     # Firma
-    firma_x = table_left + 210
-    c.setDash(2, 2)
-    c.line(firma_x, tarja_y, firma_x + 150, tarja_y)
-    c.setDash()
-    c.setFont(normal, 9)
-    c.drawCentredString(firma_x + 75, tarja_y - 12, "ASISTENTE RECEPCION")
+    
 
 # --- Nueva función principal para crear el PDF ---
 def crear_pdf(lista_datos, logo_path):

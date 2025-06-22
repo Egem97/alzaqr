@@ -18,7 +18,11 @@ def qrtool():
     #with col_header3:
     try:
         df =pd.read_excel(uploaded_file)
-        df["N° PALLET"] = df["N° PALLET"].fillna("-")
+        var_category = ['CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA']
+        var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
+        df[var_category] = df[var_category].fillna("-")
+        df[var_numeric] = df[var_numeric].fillna(0)
+        #df["N° PALLET"] = df["N° PALLET"].fillna("-")
         #GUIA CONSOLIDADA
         df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
         fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
@@ -51,10 +55,10 @@ def qrtool():
     if uploaded_file is not None:
 
         st.session_state['uploaded_dataframe'] = df
-        #st.dataframe(df)
+        
         
         df = df.groupby([
-            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','SEMANA','GUIA'
+            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA'
             ]).agg(
                 {
                     "KILOS BRUTO": "sum",
@@ -88,6 +92,11 @@ def qrtool():
         try:
         
             df = df[df["CODIGO QR"].isin(list(grid_response['selected_rows']["CODIGO QR"].values))]
+            df["KILOS NETO"] = df["KILOS NETO"].round(3)
+            df["KILOS BRUTO"] = df["KILOS BRUTO"].round(3)
+            df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].round(3)
+            df["N° JABAS"] = df["N° JABAS"].round(3)
+            df["N° JARRAS"] = df["N° JARRAS"].round(3)
             
             
             
