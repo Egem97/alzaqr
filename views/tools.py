@@ -18,34 +18,39 @@ def qrtool():
     #with col_header3:
     try:
         df =pd.read_excel(uploaded_file)
-        var_category = ['CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA']
+        var_category = ['CODIGO QR','EMPRESA','TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET',  'PLACA','N° TARJETA PALLET','GUIA']
         var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
+        df = df[df['FECHA RECEPCION'].notna()]
+        df['FECHA RECEPCION'] = pd.to_datetime(df['FECHA RECEPCION']).dt.date
+        df['FECHA SALIDA CAMPO'] = pd.to_datetime(df['FECHA SALIDA CAMPO']).dt.date 
+        df['N° VIAJE'] = df['N° VIAJE'].astype(int).astype(str)
+        df['N° TARJETA PALLET'] = df['N° TARJETA PALLET'].astype(int).astype(str)
         df[var_category] = df[var_category].fillna("-")
         df[var_numeric] = df[var_numeric].fillna(0)
-        #df["N° PALLET"] = df["N° PALLET"].fillna("-")
-        #GUIA CONSOLIDADA
+        
         df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
+
         fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
-        
-        
-        #del df
+            
+            
+            #del df
         fcol1,fcol2,fcol3,fcol4 = st.columns(4)
         with fcol1:
-            fecha_filtro = st.selectbox("Fecha Recepción",fecha_recep_list,index=None,placeholder="Seleccione una fecha")
+                fecha_filtro = st.selectbox("Fecha Recepción",fecha_recep_list,index=None,placeholder="Seleccione una fecha")
         if fecha_filtro is not None:
-            df = df[df["FECHA RECEPCION"]==fecha_filtro]
+                df = df[df["FECHA RECEPCION"]==fecha_filtro]
         viaje_list =sorted(df['N° VIAJE'].unique())
         with fcol2:
-            viaje_filtro = st.selectbox("N° de Viaje",viaje_list,index=None,placeholder="Seleccione un N° de Viaje")
-            if viaje_filtro is not None:
-                df = df[df["N° VIAJE"]==viaje_filtro]
+                viaje_filtro = st.selectbox("N° de Viaje",viaje_list,index=None,placeholder="Seleccione un N° de Viaje")
+                if viaje_filtro is not None:
+                    df = df[df["N° VIAJE"]==viaje_filtro]
         tarjeta_list =sorted(df['N° TARJETA PALLET'].unique())
         with fcol3:
-            tarja_filtro = st.selectbox("N° de Tarja",tarjeta_list,index=None,placeholder="Seleccione una tarja")
-            if tarja_filtro is not None:
-                df = df[df["N° TARJETA PALLET"]==tarja_filtro]
+                tarja_filtro = st.selectbox("N° de Tarja",tarjeta_list,index=None,placeholder="Seleccione una tarja")
+                if tarja_filtro is not None:
+                    df = df[df["N° TARJETA PALLET"]==tarja_filtro]
         with fcol4:
-            find_cod = st.text_input("Busque el QR",placeholder="Ingrese el codigo qr")
+                find_cod = st.text_input("Busque el QR",placeholder="Ingrese el codigo qr")
     except:
         pass
 
@@ -176,6 +181,8 @@ def dashboard():
     if 'uploaded_dataframe' in st.session_state :
         st.success("✅ Datos cargados desde QR Tool")
         df = st.session_state['uploaded_dataframe']
+        df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].fillna(0)
+        
         list_fecha = sorted(df["FECHA SALIDA CAMPO"].unique())
         list_viaje = sorted(df["N° VIAJE"].unique())
         #list_empresa = sorted(df["EMPRESA"].unique())
@@ -201,7 +208,7 @@ def dashboard():
             ingreso_dff= df.groupby([
                 "EMPRESA","FUNDO","VARIEDAD","CALIBRE"
             ]).agg({"KILOS NETO": "sum"}).reset_index()
-
+            ingreso_dff["KILOS NETO"] = ingreso_dff["KILOS NETO"].round(2)
             # Crear fila total para ingreso_dff
             total_row_ingreso = {
                 "EMPRESA": "TOTAL",
@@ -217,7 +224,7 @@ def dashboard():
             ingreso2_dff = df.groupby([
                   "FECHA RECEPCION","EMPRESA","FUNDO","VARIEDAD","TIPO PRODUCTO"
             ]).agg({"N° JABAS": "sum","N° JARRAS": "sum"}).reset_index()
-
+            #
             # Crear fila total para ingreso2_dff
             total_row_ingreso2 = {
                 "FECHA RECEPCION": "TOTAL",
@@ -232,6 +239,7 @@ def dashboard():
 
             aggrid_builder(ingreso2_dff)
         with tab2:
+            
             grouped_df = df.groupby([
                 "FECHA SALIDA CAMPO","HORA SALIDA CAMPO","N° VIAJE","EMPRESA","FUNDO","VARIEDAD",
                 "N° TARJETA PALLET","JABA"
@@ -252,12 +260,13 @@ def dashboard():
                 "N° TARJETA PALLET": "",
                 "JABA": "",
                 "KILOS BRUTO": grouped_df["KILOS BRUTO"].sum(),
-                "PESO NETO CAMPO": grouped_df["PESO NETO CAMPO"].sum(),
-                "KILOS NETO": grouped_df["KILOS NETO"].sum(),
+                "PESO NETO CAMPO": grouped_df["PESO NETO CAMPO"].sum().round(2),
+                "KILOS NETO": grouped_df["KILOS NETO"].sum().round(2),
                 "N° JABAS": grouped_df["N° JABAS"].sum(),
                 "PESO PROMEDIO JARRA": grouped_df["PESO PROMEDIO JARRA"].mean().round(3)
             }
-
+            grouped_df["PESO NETO CAMPO"] = grouped_df["PESO NETO CAMPO"].round(2)
+            grouped_df["KILOS NETO"] = grouped_df["KILOS NETO"].round(2)
             # Agrega la fila al final
             grouped_dff = pd.concat([grouped_df, pd.DataFrame([total_row])], ignore_index=True)
             
@@ -298,11 +307,6 @@ def dashboard():
                 allow_unsafe_jscode=True
             )
 
-            col1_tb2,col2_tb2 = st.columns(2)
-            with col1_tb2:
-                st.bar_chart(grouped_df, x="EMPRESA", y="KILOS BRUTO", color="EMPRESA")#, stack=True
-            with col2_tb2:
-                st.bar_chart(grouped_df, x="EMPRESA", y="KILOS NETO", color="EMPRESA")
 
             with tab3:
                 df_wsemana = df.copy()
@@ -310,6 +314,7 @@ def dashboard():
                 df_wsemana["FECHA RECEPCION"] = pd.to_datetime(df_wsemana["FECHA RECEPCION"], dayfirst=True, errors='coerce')
                 df_wsemana["SEMANA"] = df_wsemana["FECHA RECEPCION"].dt.isocalendar().week
                 df_wsemana["FECHA RECEPCION"] = pd.to_datetime(df_wsemana["FECHA RECEPCION"]).dt.strftime("%d/%m/%Y")
+                df_wsemana["KILOS NETO"] = df_wsemana["KILOS NETO"].round(2)
                 #st.dataframe(df_wsemana)
                 semana = st.selectbox("Semana",df_wsemana["SEMANA"].unique())
                 df_wsemana = df_wsemana[df_wsemana["SEMANA"]==semana]
@@ -327,7 +332,7 @@ def dashboard():
                 ).reset_index()
                 
                 
-                wsemana_pivot_dff["TOTAL"] = wsemana_pivot_dff[wsemana_pivot_dff.columns[4:]].sum(axis=1)
+                wsemana_pivot_dff["TOTAL"] = wsemana_pivot_dff[wsemana_pivot_dff.columns[4:]].sum(axis=1).round(2)
                 wsemana_pivot_dff = wsemana_pivot_dff.reset_index()
                 wsemana_pivot_dff = wsemana_pivot_dff.drop(columns=["index"])
 
@@ -335,7 +340,7 @@ def dashboard():
                 total_row["EMPRESA"] = "TOTAL"
                 for col in wsemana_pivot_dff.columns:
                     if col not in ["EMPRESA", "FUNDO", "VARIEDAD", "TIPO PRODUCTO"]:
-                        total_row[col] = wsemana_pivot_dff[col].sum()
+                        total_row[col] = wsemana_pivot_dff[col].sum().round(2)  
                 wsemana_pivot_dff = pd.concat([wsemana_pivot_dff, pd.DataFrame([total_row])], ignore_index=True)
                 aggrid_builder(wsemana_pivot_dff)
                 #st.line_chart(df_wsemana, x="FECHA RECEPCION", y="KILOS NETO")
@@ -347,6 +352,7 @@ def dashboard():
             df_week["SEMANA"] = df_week["FECHA RECEPCION"].dt.isocalendar().week
             df_week["SEMANA"] = df_week["SEMANA"].astype(str)
             df_week["FECHA RECEPCION"] = pd.to_datetime(df_week["FECHA RECEPCION"]).dt.strftime("%d/%m/%Y")
+            df_week["KILOS NETO"] = df_week["KILOS NETO"].round(2)
             week_pivot = pd.pivot_table(
                 df_week,
                 values="KILOS NETO",
