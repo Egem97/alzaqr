@@ -223,8 +223,9 @@ def dashboard():
             
             ingreso2_dff = df.groupby([
                   "FECHA RECEPCION","EMPRESA","FUNDO","VARIEDAD","TIPO PRODUCTO"
-            ]).agg({"N° JABAS": "sum","N° JARRAS": "sum"}).reset_index()
+            ]).agg({"N° JABAS": "sum","N° JARRAS": "sum","KILOS NETO": "sum"}).reset_index()
             #
+            ingreso2_dff["KILOS NETO"] = ingreso2_dff["KILOS NETO"].round(2)
             # Crear fila total para ingreso2_dff
             total_row_ingreso2 = {
                 "FECHA RECEPCION": "TOTAL",
@@ -233,7 +234,8 @@ def dashboard():
                 "VARIEDAD": "",
                 "TIPO PRODUCTO": "",
                 "N° JABAS": ingreso2_dff["N° JABAS"].sum(),
-                "N° JARRAS": ingreso2_dff["N° JARRAS"].sum()
+                "N° JARRAS": ingreso2_dff["N° JARRAS"].sum(),
+                "KILOS NETO": ingreso2_dff["KILOS NETO"].sum()
             }
             ingreso2_dff = pd.concat([ingreso2_dff, pd.DataFrame([total_row_ingreso2])], ignore_index=True)
 
@@ -241,8 +243,8 @@ def dashboard():
         with tab2:
             
             grouped_df = df.groupby([
-                "FECHA SALIDA CAMPO","HORA SALIDA CAMPO","N° VIAJE","EMPRESA","FUNDO","VARIEDAD",
-                "N° TARJETA PALLET","JABA"
+                "FECHA RECEPCION","N° VIAJE","EMPRESA","FUNDO","VARIEDAD",
+                "N° TARJETA PALLET","CALIBRE"
             ]).agg({
                 "KILOS BRUTO": "sum",
                 "PESO NETO CAMPO": "sum", 
@@ -250,15 +252,17 @@ def dashboard():
                 "N° JABAS": "sum",
                 "PESO PROMEDIO JARRA": "mean"  
             }).reset_index()
+            grouped_df["KILOS BRUTO"] = grouped_df["KILOS BRUTO"].round(2)
+
+            
             total_row = {
-                "FECHA SALIDA CAMPO": "TOTAL",
-                "HORA SALIDA CAMPO": "",
+                "FECHA RECEPCION": "TOTAL",
                 "N° VIAJE": np.nan,
                 "EMPRESA": "",
                 "FUNDO": "",
                 "VARIEDAD": "",
                 "N° TARJETA PALLET": "",
-                "JABA": "",
+                "CALIBRE": "",
                 "KILOS BRUTO": grouped_df["KILOS BRUTO"].sum(),
                 "PESO NETO CAMPO": grouped_df["PESO NETO CAMPO"].sum().round(2),
                 "KILOS NETO": grouped_df["KILOS NETO"].sum().round(2),
@@ -303,7 +307,7 @@ def dashboard():
                 enable_enterprise_modules=False,
                 update_mode='MODEL_CHANGED',
                 fit_columns_on_grid_load=True,
-                height=height,
+                height=height-20,
                 allow_unsafe_jscode=True
             )
 
