@@ -191,8 +191,13 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     c.setFont(bold, 13) # Resaltado
     c.drawString(col2_x + 70, y, f"{datos['peso_neto']}")
     
+    y -= row_height
+    c.setFont(bold, font_size)
+    c.drawString(col2_x, y, "T° CAMPO:")
+    c.setFont(bold, 9) # Resaltado
+    c.drawString(col2_x + 70, y, f"{datos['temperatura_campo']}")#
     # --- Línea horizontal sobre TUNEL DE ENFRIAMIENTO ---
-    line_h2_y = y - 10
+    line_h2_y = y - 20
     c.line(line_v2_x, line_h2_y, boleta_left + boleta_width, line_h2_y)
 
     y -= (row_height + 15) # Espacio extra para la nueva sección

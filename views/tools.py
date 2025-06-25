@@ -27,6 +27,7 @@ def qrtool():
         df['FECHA SALIDA CAMPO'] = pd.to_datetime(df['FECHA SALIDA CAMPO']).dt.date 
         df['N° VIAJE'] = df['N° VIAJE'].astype(str)
         
+        df['T° CAMPO'] = df['T° CAMPO'].fillna("-")
         df[var_category] = df[var_category].fillna("-")
         df[var_numeric] = df[var_numeric].fillna(0)
         
@@ -65,7 +66,7 @@ def qrtool():
         
         
         df = df.groupby([
-            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA','CALIBRE'
+            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA','CALIBRE','T° CAMPO'
             ]).agg(
                 {
                     "KILOS BRUTO": "sum",
@@ -131,6 +132,7 @@ def qrtool():
                         'peso_campo': df["PESO NETO CAMPO"].values[i],
                         'peso_neto': df["KILOS NETO"].values[i],
                         'calibre': df["CALIBRE"].values[i],
+                        'temperatura_campo': df["T° CAMPO"].values[i],
                         'tunel_enfriamiento': ""
                     }
                     lista_datos.append(datos)
