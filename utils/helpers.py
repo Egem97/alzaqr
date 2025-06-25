@@ -151,7 +151,7 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     y -= row_height
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "VIAJE:")
-    c.setFont(normal, 9)
+    c.setFont(normal, 17)
     c.drawString(col1_x + 90, y, f"{datos['viaje']}")
 
     # --- Columna 2 ---
@@ -205,16 +205,36 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     section_width = (boleta_left + boleta_width) - line_v2_x
     c.drawString(line_v2_x + (section_width - text_tunel_width) / 2, y, text_tunel)
     
-    # --- N° TARJA Y FIRMA  ---
-    tarja_y = boleta_bottom + 30 # Posición debajo del recuadro
+    # --- N° TARJA Y CALIBRE (parte inferior, en columnas) ---
+    tarja_y = boleta_bottom + 25  # Más cerca del borde inferior
+    col_width = 40  # Ancho de cada columna
+    # Columna izquierda: Nº TARJA
+    c.setFont(bold, 12)
+    c.drawCentredString(table_left + col_width+20 // 2, tarja_y + 32, "Nº TARJA:")
+    c.setFont(bold, 28)
+    c.drawCentredString(table_left + col_width+20 // 2, tarja_y, f"{datos['num_tarja']}")
+
+    # Columna derecha: CALIBRE      
+    calibre_x = table_left + col_width + col_width // 2 + 60  # Ajusta el +60 según el ancho de tu boleta
+    c.setFont(bold, 12)
+    c.drawCentredString(calibre_x+42, tarja_y + 32, "CALIBRE:")
+    c.setFont(bold, 24)
+    c.drawCentredString(calibre_x+42, tarja_y, f"{datos['calibre']}")
+    #··············································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································································
+    section_width = ((boleta_left-60 )) - line_v2_x
+    c.drawString(line_v2_x + (section_width - text_tunel_width) / 2, y,"")
     
-    c.setFont(bold, 15)
-    c.drawString(table_left, tarja_y, "N° TARJA:")
-    c.setFont(bold, 15)
-    c.drawString(table_left + 90, tarja_y, f"{datos['num_tarja']}")
-    
-    # Firma
-    
+    # --- Líneas divisorias para la sección inferior ---
+    # Línea horizontal superior
+    line_bottom_y = boleta_bottom + 65  # Ajusta según la altura de los títulos
+    c.setLineWidth(1)
+    #c.line(table_left-5, line_bottom_y, boleta_left + boleta_width, line_bottom_y)
+    c.line(table_left-5, line_bottom_y+10, boleta_width-130, line_bottom_y+10)
+    # Línea vertical entre columnas
+    section_width = (boleta_left + boleta_width) - table_left
+    col_div_x = table_left + section_width // 4
+    c.line(col_div_x+10, boleta_bottom, col_div_x+10, line_bottom_y+10)
+
 
 # --- Nueva función principal para crear el PDF ---
 def crear_pdf(lista_datos, logo_path):

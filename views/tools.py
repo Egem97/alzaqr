@@ -17,14 +17,16 @@ def qrtool():
             uploaded_file = st.file_uploader("Escoja su archivo excel", accept_multiple_files=False,type=['xlsx'],key="uploaded_file")
     #with col_header3:
     try:
-        df =pd.read_excel(uploaded_file)
+        df =pd.read_excel(uploaded_file,dtype={'N° TARJETA PALLET': str})
+        #df['N° TARJETA PALLET'] = df['N° TARJETA PALLET'].astype(str)
+        #st.write(df['N° TARJETA PALLET'].unique())
         var_category = ['CODIGO QR','EMPRESA','TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET',  'PLACA','N° TARJETA PALLET','GUIA']
         var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
         df = df[df['FECHA RECEPCION'].notna()]
         df['FECHA RECEPCION'] = pd.to_datetime(df['FECHA RECEPCION']).dt.date
         df['FECHA SALIDA CAMPO'] = pd.to_datetime(df['FECHA SALIDA CAMPO']).dt.date 
-        df['N° VIAJE'] = df['N° VIAJE'].astype(int).astype(str)
-        df['N° TARJETA PALLET'] = df['N° TARJETA PALLET'].astype(int).astype(str)
+        df['N° VIAJE'] = df['N° VIAJE'].astype(str)
+        
         df[var_category] = df[var_category].fillna("-")
         df[var_numeric] = df[var_numeric].fillna(0)
         
@@ -63,7 +65,7 @@ def qrtool():
         
         
         df = df.groupby([
-            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA'
+            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA','CALIBRE'
             ]).agg(
                 {
                     "KILOS BRUTO": "sum",
@@ -73,10 +75,11 @@ def qrtool():
                     "N° JARRAS": "sum",
                 }
             ).reset_index()
+        
         df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].round(2)
         df = df[df["CODIGO QR"].str.contains(find_cod)]
         show_dff = df.copy()
-        show_dff = show_dff[['CODIGO QR','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
+        show_dff = show_dff[['CODIGO QR','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','CALIBRE','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
         gb = GridOptionsBuilder.from_dataframe(show_dff)
         gb.configure_selection(selection_mode="multiple", use_checkbox=True)
         gb.configure_column("CODIGO QR", width=400)
@@ -95,8 +98,9 @@ def qrtool():
                                 height=height
         )
         try:
-        
-            df = df[df["CODIGO QR"].isin(list(grid_response['selected_rows']["CODIGO QR"].values))]
+            #st.write(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))
+            df = df[df["N° TARJETA PALLET"].isin(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))]
+            #st.dataframe(df)
             df["KILOS NETO"] = df["KILOS NETO"].round(3)
             df["KILOS BRUTO"] = df["KILOS BRUTO"].round(3)
             df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].round(3)
@@ -126,6 +130,7 @@ def qrtool():
                         'num_jarras': df["N° JARRAS"].values[i],
                         'peso_campo': df["PESO NETO CAMPO"].values[i],
                         'peso_neto': df["KILOS NETO"].values[i],
+                        'calibre': df["CALIBRE"].values[i],
                         'tunel_enfriamiento': ""
                     }
                     lista_datos.append(datos)
