@@ -193,9 +193,9 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     
     y -= row_height
     c.setFont(bold, font_size)
-    c.drawString(col2_x, y, "T° CAMPO:")
+    c.drawString(col2_x, y, "T° ESTADO:")
     c.setFont(bold, 9) # Resaltado
-    c.drawString(col2_x + 70, y, f"{datos['temperatura_campo']}")#
+    c.drawString(col2_x + 70, y, f"{datos['temperatura_estado']}")#
     # --- Línea horizontal sobre TUNEL DE ENFRIAMIENTO ---
     line_h2_y = y - 20
     c.line(line_v2_x, line_h2_y, boleta_left + boleta_width, line_h2_y)
