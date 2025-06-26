@@ -283,6 +283,10 @@ def dashboard():
             
             gb = GridOptionsBuilder.from_dataframe(grouped_dff)
             
+            # Ajustar automáticamente el ancho de todas las columnas
+            for col in grouped_dff.columns:
+                gb.configure_column(col, autoWidth=True)
+
             # --- Estilo para resaltar la última fila en todas las columnas con texto más grande ---
             cellstyle_last_row = JsCode(f"""
                 function(params) {{
@@ -301,6 +305,12 @@ def dashboard():
                 gb.configure_column(col, cellStyle=cellstyle_last_row)
 
             grid_options = gb.build()
+
+            # Reducir el tamaño de fuente de la tabla para ver más columnas
+            custom_css = {
+                ".ag-theme-streamlit .ag-cell": {"font-size": "12px !important"},
+                ".ag-theme-streamlit .ag-header-cell-label": {"font-size": "13px !important"},
+            }
             
             row_height = 35
             header_height = 35
@@ -315,7 +325,8 @@ def dashboard():
                 update_mode='MODEL_CHANGED',
                 fit_columns_on_grid_load=True,
                 height=height-20,
-                allow_unsafe_jscode=True
+                allow_unsafe_jscode=True,
+                custom_css=custom_css
             )
 
 
