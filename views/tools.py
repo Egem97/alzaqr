@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from styles import styles
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
-from io import StringIO
+from io import StringIO, BytesIO
 from utils.helpers import crear_pdf, generar_qr
 from utils.components import aggrid_builder
 
@@ -402,9 +403,79 @@ def dashboard():
 
 
 
-
-
-
+def qrgenerator():
+    styles(2)
+    dict_resumen_empresa = {
+        "GMH BERRIES S.A.C": {"ACORTADOR":"GMH"},
+        "EXCELLENCE FRUIT S.A.C": {"ACORTADOR":"EXC"},
+        "GAP BERRIES S.A.C": {"ACORTADOR":"GAP"},
+        "BIG BERRIES S.A.C": {"ACORTADOR":"BIG"},
+        "CANYON BERRIES S.A.C": {"ACORTADOR":"CAN"},
+        "TARA FARMS S.A.C": {"ACORTADOR":"TAF"},
+        "Q BERRIES S.A.C": {"ACORTADOR":"QBE"},
+    }
+    dict_fundos_empresa ={
+        "GMH BERRIES S.A.C": {
+            "FUNDO":{
+                "LA ESPERANZA":"LE"
+            }},
+        "EXCELLENCE FRUIT S.A.C": {
+            "FUNDO":{
+                "SAN PEDRO":"SP",
+                "SAN JOSE":"SJ",
+            }
+        },
+        "GAP BERRIES S.A.C": {
+            "FUNDO":{
+                "GAP BERRIES S.A.C":"GB"
+            }
+        },
+        "BIG BERRIES S.A.C": {
+            "FUNDO":{
+                "LA COLINA":"LC"
+            }
+        },
+        "CANYON BERRIES S.A.C": {
+            "FUNDO":{
+                "EL POTRERO":"EP"
+            }
+        },
+        "TARA FARMS S.A.C": {
+            "FUNDO":{
+                "LAS BRISAS":"LB"
+            }
+        },
+        "Q BERRIES S.A.C": {
+            "FUNDO":{
+                "LICAPA":"LI"
+            }
+        }
+    }
+    col_header1,col_header2,col_header3  = st.columns([5,3,3])
+    with col_header1:
+        st.title("Generador de QR")
+    with  col_header2:
+        input_empresa = st.selectbox("EMPRESA",dict_resumen_empresa.keys())
+    with col_header3:
+        input_fundo = st.selectbox("FUNDO",dict_fundos_empresa[input_empresa]["FUNDO"].keys())
+    
+    btn = st.button("GENERAR QR ", type="primary", use_container_width=True)
+    if btn:
+        fecha_actual = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        empresa_ = dict_resumen_empresa[input_empresa]["ACORTADOR"]
+        fundo_ = dict_fundos_empresa[input_empresa]["FUNDO"][input_fundo]
+        concat_code = empresa_+fundo_+fecha_actual
+        qr_img = generar_qr(concat_code)
+        img_buffer = BytesIO()
+        qr_img.save(img_buffer, format='PNG')
+        img_buffer.seek(0)
+        
+        # Centrar la imagen QR
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(img_buffer, width=250,use_column_width=True)
+            st.markdown(f"<h2 style='text-align: center;'>{concat_code}</h2>", unsafe_allow_html=True)
 
 
 """
