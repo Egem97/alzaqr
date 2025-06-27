@@ -406,6 +406,7 @@ def dashboard():
 def qrgenerator():
     styles(2)
     dict_resumen_empresa = {
+        "AGRICOLA BLUE GOLD S.A.C":{"ACORTADOR":"ABG"},
         "GMH BERRIES S.A.C": {"ACORTADOR":"GMH"},
         "EXCELLENCE FRUIT S.A.C": {"ACORTADOR":"EXC"},
         "GAP BERRIES S.A.C": {"ACORTADOR":"GAP"},
@@ -413,8 +414,17 @@ def qrgenerator():
         "CANYON BERRIES S.A.C": {"ACORTADOR":"CAN"},
         "TARA FARMS S.A.C": {"ACORTADOR":"TAF"},
         "Q BERRIES S.A.C": {"ACORTADOR":"QBE"},
+        
     }
     dict_fundos_empresa ={
+        "AGRICOLA BLUE GOLD S.A.C":{
+            "FUNDO":{
+                "VISTA HERMOSA":"VH",
+                "CERRO VERDE":"CV",
+                "SAN ANDRES":"SA",
+                "EL MILAGRO":"EM"
+            }
+        },
         "GMH BERRIES S.A.C": {
             "FUNDO":{
                 "LA ESPERANZA":"LE"
@@ -474,7 +484,7 @@ def qrgenerator():
         # Centrar la imagen QR
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image(img_buffer, width=250,use_column_width=True)
+            st.image(img_buffer, width=450,use_column_width=False)
             st.markdown(f"<h2 style='text-align: center;'>{concat_code}</h2>", unsafe_allow_html=True)
 
 
