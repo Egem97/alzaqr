@@ -45,9 +45,9 @@ def qrtool():
                 df = df[df["FECHA RECEPCION"]==fecha_filtro]
         viaje_list =sorted(df['N° VIAJE'].unique())
         with fcol2:
-                viaje_filtro = st.selectbox("N° de Viaje",viaje_list,index=None,placeholder="Seleccione un N° de Viaje")
-                if viaje_filtro is not None:
-                    df = df[df["N° VIAJE"]==viaje_filtro]
+                viaje_filtro = st.multiselect("N° de Viaje",viaje_list,placeholder="Seleccione un N° de Viaje")
+                if len(viaje_filtro)> 0:
+                    df = df[df["N° VIAJE"].isin(viaje_filtro)]
         tarjeta_list =sorted(df['N° TARJETA PALLET'].unique())
         with fcol3:
                 tarja_filtro = st.selectbox("N° de Tarja",tarjeta_list,index=None,placeholder="Seleccione una tarja")
@@ -86,18 +86,14 @@ def qrtool():
         gb.configure_selection(selection_mode="multiple", use_checkbox=True)
         gb.configure_column("CODIGO QR", width=400)
         grid_options = gb.build()
-        row_height = 35
-        header_height = 35
-        num_rows = len(show_dff)
-        height = header_height + (num_rows * row_height)
-        height = max(height, 120) 
+
         grid_response = AgGrid(show_dff, # Dataframe a mostrar
                                 gridOptions=grid_options,
                                 enable_enterprise_modules=False,
                                 #theme='alpine',  # Cambiar tema si se desea ('streamlit', 'light', 'dark', 'alpine', etc.)
                                 update_mode='MODEL_CHANGED',
                                 fit_columns_on_grid_load=True,
-                                height=height
+                                height=550
         )
         try:
             #st.write(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))
@@ -157,23 +153,7 @@ def qrtool():
 
     
         
-        #st.download_button(
-        #                label="Descargar PDF",
-        #                data=pdf_buffer,
-        #                file_name=f"boleta_{num_tarja}.pdf",
-        #                mime="application/pdf")
-            
-        #st.download_button(
-        #            label="Descargar como PNG",
-        #            data=img_buffer,
-        #            file_name=f"boleta_{num_tarja}.png",
-        #            mime="image/png"
-         #       )
-            #except:
-            #    st.error("Debe seleccionar un registro")
-        #except:
-            #st.error("Debe seleccionar un registro")
-        #st.image(qr_img, caption="QR generado", width=150)
+
         
 
 
@@ -271,11 +251,11 @@ def dashboard():
                 "VARIEDAD": "",
                 "N° TARJETA PALLET": "",
                 "CALIBRE": "",
-                "KILOS BRUTO": grouped_df["KILOS BRUTO"].sum(),
-                "PESO NETO CAMPO": grouped_df["PESO NETO CAMPO"].sum().round(2),
-                "KILOS NETO": grouped_df["KILOS NETO"].sum().round(2),
-                "N° JABAS": grouped_df["N° JABAS"].sum(),
-                "PESO PROMEDIO JARRA": grouped_df["PESO PROMEDIO JARRA"].mean().round(3)
+                "KILOS BRUTO": grouped_df['KILOS BRUTO'].sum().round(2),
+                "PESO NETO CAMPO": grouped_df['PESO NETO CAMPO'].sum().round(2),
+                "KILOS NETO": grouped_df['KILOS NETO'].sum().round(2),
+                "N° JABAS": grouped_df['N° JABAS'].sum().round(2),
+                "PESO PROMEDIO JARRA": grouped_df['PESO PROMEDIO JARRA'].mean().round(2)
             }
             grouped_df["PESO NETO CAMPO"] = grouped_df["PESO NETO CAMPO"].round(2)
             grouped_df["KILOS NETO"] = grouped_df["KILOS NETO"].round(2)
