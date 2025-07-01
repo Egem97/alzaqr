@@ -24,6 +24,11 @@ def explorer_prod_excel():
         df = pd.read_excel(uploaded_file,sheet_name="TD-DATOS PT")
         df = df[df["F. PRODUCCION"].notna()]
         df["F. PRODUCCION"] = pd.to_datetime(df["F. PRODUCCION"]).dt.date
+        df["CONTENERDOR"] = df["CONTENERDOR"].fillna("NO ESPECIFICADO")
+        df["TIPO DE PALLET"] = df["TIPO DE PALLET"].fillna("NO ESPECIFICADO")
+        df["OBS"] = df["OBS"].fillna("NO ESPECIFICADO")
+        df["CLIENTE"] = df["CLIENTE"].fillna("NO ESPECIFICADO")
+        df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].fillna("NO ESPECIFICADO")
         #with st.expander("Datos Originales",expanded=True):
         #    st.write(df.shape)
         #     st.dataframe(df)

@@ -3,7 +3,7 @@ from router.core import pages
 
 def main():    
     st.set_page_config(
-        page_title="QR TOOL",
+        page_title="PACKING TOOL",
         page_icon="src/assets/logo.jpg",
         layout="wide",
     )
