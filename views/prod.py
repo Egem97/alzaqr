@@ -2,17 +2,23 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import io
 from datetime import datetime
 from styles import styles
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
 from io import StringIO, BytesIO
 from utils.helpers import crear_pdf, generar_qr
-from utils.components import aggrid_builder,aggrid_builder_prod
+from utils.components import aggrid_builder,aggrid_builder_prod,aggrid_editing_prod
 
 
 
 def explorer_prod_excel():
     styles(2)
+    formatos_produccion_dff = pd.read_parquet("src/data/FORMATOS PRODUCCION.parquet")
+    formatos_produccion_dff = formatos_produccion_dff[["DESCRIPCION","Detalles","PESO CAJA","SOBRE PESO"]]
+    formatos_produccion_dff = formatos_produccion_dff.rename({"DESCRIPCION":"DESCRIPCION DEL PRODUCTO"},axis=1)
+    #4.4OZ C/E SAN LUCAR UK ANUSAYA-A
+    formatos_produccion_dff = pd.concat([formatos_produccion_dff,pd.DataFrame([{"DESCRIPCION DEL PRODUCTO":"4.4OZ C/E SAN LUCAR UK ANUSAYA-A","Detalles":240,"PESO CAJA":1.5,"SOBRE PESO":1.03}])])
     col_header1,col_header2 = st.columns([6,6])
     with col_header1:
         st.title("PRODUCTO TERMINADO")
@@ -22,6 +28,7 @@ def explorer_prod_excel():
     
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file,sheet_name="BD")
+        print(df.columns)
         df = df[df["F. PRODUCCION"].notna()]
         df["F. PRODUCCION"] = pd.to_datetime(df["F. PRODUCCION"]).dt.date
         df["CONTENEDOR"] = df["CONTENEDOR"].fillna("NO ESPECIFICADO")
@@ -29,13 +36,14 @@ def explorer_prod_excel():
         df["OBSERVACIONES"] = df["OBSERVACIONES"].fillna("NO ESPECIFICADO")
         df["CLIENTE"] = df["CLIENTE"].fillna("NO ESPECIFICADO")
         df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].fillna("NO ESPECIFICADO")
+        df["DESCRIPCION DEL PRODUCTO"] = df["DESCRIPCION DEL PRODUCTO"].str.strip()
         #with st.expander("Datos Originales",expanded=True):
         #    st.write(df.shape)
         #     st.dataframe(df)
         
-        dff = df.groupby(["F. PRODUCCION","CLIENTE","CONTENEDOR","TIPO DE PALLET","DESCRIPCION DEL PRODUCTO",
+        dff = df.groupby(["ENVIO","F. PRODUCCION","CLIENTE","CONTENEDOR","TIPO DE PALLET","DESCRIPCION DEL PRODUCTO",
         "DESTINO","FUNDO",'VARIEDAD',"OBSERVACIONES"]).agg({
-            "Nº CAJAS":"sum","Nº DE PALLET":"count"
+            "Nº CAJAS":"sum","Nº DE PALLET":"count","KG EXPORTABLES":"sum"
         
         }).reset_index()
         
@@ -59,19 +67,22 @@ def explorer_prod_excel():
                 if select_presentacion != None:
                     dff = dff[dff["DESCRIPCION DEL PRODUCTO"] == select_presentacion]
         #dff["F. PRODUCCION"] = pd.to_datetime(dff["F. PRODUCCION"])
-        tab1, tab2 = st.tabs(["RESUMEN", "DASHBOARD",])
+        tab1, tab2,tab3 = st.tabs(["RESUMEN", "DASHBOARD","PROGRAMA DE EMPAQUE"])
         with tab1:
-            table1_dff = dff.groupby(["CLIENTE","F. PRODUCCION","DESCRIPCION DEL PRODUCTO","FUNDO","VARIEDAD","OBSERVACIONES"])[[
-                "Nº CAJAS"
-            ]].sum().reset_index()
+            table1_dff = dff.groupby(["CLIENTE","F. PRODUCCION","DESCRIPCION DEL PRODUCTO","FUNDO","VARIEDAD","OBSERVACIONES"]).agg({
+                "Nº DE PALLET":"count","Nº CAJAS":"sum"
+            }).reset_index()
             # Agregar fila total
+            table1_dff["Nº DE PALLET"] = table1_dff["Nº DE PALLET"].astype(int)
+            table1_dff = table1_dff.rename({"Nº DE PALLET":"Nº PALLETS"},axis=1)
             total_row = {col: '' for col in table1_dff.columns}
             total_row[table1_dff.columns[0]] = 'TOTAL'
-            for col in ["Nº CAJAS"]:
+            for col in ["Nº CAJAS","Nº PALLETS"]:
                 total_row[col] = table1_dff[col].sum()
             table1_dff = pd.concat([table1_dff, pd.DataFrame([total_row])], ignore_index=True)
 
             st.subheader("Resumen PT")
+           
             aggrid_builder_prod(table1_dff)
             st.subheader("Resumen Programa")
             table2_dff = dff.groupby(["CLIENTE","F. PRODUCCION","CONTENEDOR","DESCRIPCION DEL PRODUCTO","VARIEDAD",])[["Nº CAJAS"]].sum().reset_index()
@@ -101,9 +112,16 @@ def explorer_prod_excel():
             #print(table2_pivot_dff.columns)
             #st.dataframe(table2_pivot_dff)
             aggrid_builder_prod(table2_pivot_dff)
+            ####################################################################
+            
+            
+            
+            #table3_dff["Nº DE PALLET"] = table3_dff["Nº DE PALLET"].astype(int)
+            #table3_dff = table3_dff.rename({"Nº DE PALLET":"Nº PALLETS"},axis=1)
+            #st.write(table3_dff.shape)
 
-            # Exportar ambos DataFrames a un Excel con formato agradable
-            import io
+            ###################################################################
+            
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 table1_dff.to_excel(writer, sheet_name='Resumen PT', index=False)
@@ -131,7 +149,7 @@ def explorer_prod_excel():
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         with tab2:
-            LIST_VAR_NUM = ["Nº CAJAS"]#,"KG EMPACADOS","KG EXPORTABLES "
+            LIST_VAR_NUM = ["Nº CAJAS","KG EXPORTABLES"]#,"KG EMPACADOS","KG EXPORTABLES "
             col_header1,col_header2 = st.columns([6,6])
             with col_header1:
                 st.subheader("DASHBOARD")
@@ -208,6 +226,75 @@ def explorer_prod_excel():
                     x=1
                 ))
                 st.plotly_chart(fig3)
+        with tab3:
+            st.subheader("PROGRAMA DE EMPAQUE")
+            table3_dff = dff.groupby(["ENVIO","CONTENEDOR","DESCRIPCION DEL PRODUCTO","VARIEDAD","F. PRODUCCION","DESTINO"]).agg({
+                "Nº DE PALLET":"count","Nº CAJAS":"sum"
+            }).reset_index()
+            list_fechas = sorted(list(table3_dff["F. PRODUCCION"].unique()))
+            list_fechas_str = [fecha.strftime('%Y-%m-%d') for fecha in list_fechas]
+            table3_group_npallets_df = table3_dff.groupby(["ENVIO","CONTENEDOR","DESCRIPCION DEL PRODUCTO","VARIEDAD","DESTINO"]).agg({"Nº DE PALLET":"sum"}).reset_index()
+            table3_group_npallets_df["STOCK"] = 0
+            with st.expander("EDITOR DE STOCK",expanded=True):
+                dataframe_aggrid = aggrid_editing_prod(table3_group_npallets_df)
+            table3_pivot_dff = pd.pivot_table(
+                    table3_dff,
+                    values="Nº CAJAS",
+                    index=["ENVIO","CONTENEDOR","DESCRIPCION DEL PRODUCTO","VARIEDAD", "DESTINO"],
+                    columns="F. PRODUCCION",
+                    aggfunc="sum",
+                    fill_value=0,
+            
+            )
+            table3_pivot_dff = table3_pivot_dff.reset_index()
+            table3_pivot_dff.columns = [
+                col.strftime('%d/%m/%Y') if isinstance(col, (pd.Timestamp, datetime, np.datetime64)) else str(col)
+                for col in table3_pivot_dff.columns
+            ]
+            table3_pivot_dff = table3_pivot_dff.merge(dataframe_aggrid.data,on=["ENVIO","CONTENEDOR","DESCRIPCION DEL PRODUCTO","VARIEDAD","DESTINO"],how="left")
+            table3_pivot_dff = table3_pivot_dff.merge(formatos_produccion_dff,on="DESCRIPCION DEL PRODUCTO",how="left")
+            table3_pivot_dff["BALANCE"] = table3_pivot_dff["Nº DE PALLET"] * table3_pivot_dff["Detalles"]
+            table3_pivot_dff["CAJAS FALTANTES"] = table3_pivot_dff[["STOCK"]+list_fechas_str].sum(axis=1)
+            table3_pivot_dff["PALLETS FALTANTES"] = round(table3_pivot_dff["CAJAS FALTANTES"]/table3_pivot_dff["Detalles"],2)
+            table3_pivot_dff["KG FALTANTES"] = table3_pivot_dff["CAJAS FALTANTES"] * table3_pivot_dff["PESO CAJA"]* table3_pivot_dff["SOBRE PESO"]
+            table3_pivot_dff["ESTADO"] = table3_pivot_dff["PALLETS FALTANTES"].apply(lambda x: "COMPLETO" if x <= 0 else "EN PROCESO")
+            #table3_pivot_dff = table3_pivot_dff.sort_values(by="ESTADO")
+            table3_pivot_dff["MARKET"] = ""
+            table3_pivot_dff["ENVIO"] = table3_pivot_dff["ENVIO"].replace({"MARITIMO":"M","AEREO":"A"})
+            table3_pivot_dff["Detalles"] = (table3_pivot_dff["Detalles"].astype(str)+" CAJAS/PALLET")
+            #print(table3_pivot_dff.columns)
+            table3_pivot_dff = table3_pivot_dff[
+                ['ENVIO', 'CONTENEDOR', 'DESCRIPCION DEL PRODUCTO', 'VARIEDAD','Nº DE PALLET','STOCK']+list_fechas_str+
+                ['BALANCE','CAJAS FALTANTES','PALLETS FALTANTES','PESO CAJA','SOBRE PESO','KG FALTANTES','MARKET','DESTINO','Detalles','ESTADO' ]
+            ]
+            table3_pivot_dff.columns = ['ENVIO', 'FCL', 'DESCRIPCION', 'VARIEDAD','PHL','STOCK']+list_fechas_str+['BALANCE','CAJAS FALTANTES','PALLETS FALTANTES','PESO CAJA','SOBRE PESO','KG FALTANTES','MARKET','DESTINO','DETALLES','ESTADO' ]
+
+            st.dataframe(table3_pivot_dff)
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                table3_pivot_dff.to_excel(writer, sheet_name='PROGRAMA DE EMPAQUE', index=False)
+                workbook  = writer.book
+                worksheet1 = writer.sheets['PROGRAMA DE EMPAQUE']
+                
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'text_wrap': True,
+                    'valign': 'top',
+                    'fg_color': '#D7E4BC',
+                    'border': 1})
+                for worksheet, df in zip([worksheet1], [table3_pivot_dff]):
+                    for col_num, value in enumerate(df.columns.values):
+                        worksheet.write(0, col_num, value, header_format)
+                    for i, col in enumerate(df.columns):
+                        max_len = max(df[col].astype(str).map(len).max(), len(str(col))) + 2
+                        worksheet.set_column(i, i, max_len)
+            processed_data = output.getvalue()
+            st.download_button(
+                label="Descargar Excel",
+                data=processed_data,
+                file_name="programa_empaque.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
 
 

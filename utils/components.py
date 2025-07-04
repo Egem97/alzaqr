@@ -87,3 +87,26 @@ def aggrid_builder_prod(dataframe = pd.DataFrame(),columns_totales = []):
         #width = "100%",
         #theme = "light"
     )
+
+def aggrid_editing_prod(dataframe = pd.DataFrame(),columns_totales = []):
+    gb = GridOptionsBuilder.from_dataframe(dataframe)
+    # Solo permitir edición en la columna 'STOCK'
+    for col in dataframe.columns:
+        gb.configure_column(col, editable=(col == 'STOCK'))
+    grid_options = gb.build()
+    row_height = 35
+    header_height = 35
+    num_rows = len(dataframe)
+    min_height = 120
+    max_height = 600
+    height = min(max(header_height + (num_rows * row_height), min_height), max_height)
+
+    return AgGrid(
+        dataframe,
+        gridOptions = grid_options,
+        update_mode = 'MODEL_CHANGED',
+        height = height,
+        fit_columns_on_grid_load=True,
+        allow_unsafe_jscode=True,
+        editable=True
+    )
