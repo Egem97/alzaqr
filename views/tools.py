@@ -83,7 +83,8 @@ def qrtool():
         show_dff = df.copy()
         show_dff = show_dff[['CODIGO QR','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','CALIBRE','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
         gb = GridOptionsBuilder.from_dataframe(show_dff)
-        gb.configure_selection(selection_mode="multiple", use_checkbox=True)
+        gb.configure_selection(selection_mode="multiple", use_checkbox=True,header_checkbox=True)
+        #
         gb.configure_column("CODIGO QR", width=400)
         grid_options = gb.build()
 
@@ -91,10 +92,11 @@ def qrtool():
                                 gridOptions=grid_options,
                                 enable_enterprise_modules=False,
                                 #theme='alpine',  # Cambiar tema si se desea ('streamlit', 'light', 'dark', 'alpine', etc.)
-                                update_mode='MODEL_CHANGED',
+                                update_mode=GridUpdateMode.SELECTION_CHANGED , 
                                 fit_columns_on_grid_load=True,
                                 height=550
         )
+        #st.write(grid_response['selected_rows'])
         try:
             #st.write(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))
             df = df[df["N° TARJETA PALLET"].isin(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))]

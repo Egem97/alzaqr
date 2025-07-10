@@ -9,7 +9,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
 from io import StringIO, BytesIO
 from utils.helpers import crear_pdf, generar_qr
 from utils.components import aggrid_builder,aggrid_builder_prod,aggrid_editing_prod
-
+from utils.helpers import generar_qr
 
 
 def explorer_prod_excel():
@@ -295,7 +295,28 @@ def explorer_prod_excel():
                 file_name="programa_empaque.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+def tunel_qr_enfiramiento():
+    styles(2)
+    st.title("🧊TUNEL QR ENFIRAMIENTO ")
+    
+     # 1 a 15
 
+    #st.write("### Matriz de posiciones de almacenamiento (3 niveles x 15 columnas)")
+    st.write("### CAMARA 1")
+    with st.container(border=True):
+        niveles = ['S', 'M', 'I']
+        columnas = list(range(1, 16)) 
+        for fila_idx, nivel in enumerate(niveles, start=1):
+            cols = st.columns(len(columnas))
+            for idx, col_num in enumerate(columnas):
+                code = f"C1C({col_num}-{fila_idx}){nivel}"
+                qr_img = generar_qr(code)
+                img_buffer = BytesIO()
+                qr_img.save(img_buffer, format='PNG')
+                img_buffer.seek(0)
+                with cols[idx]:
+                    st.image(img_buffer, width=80)
+                    st.write(f"**{code}**")
 
 
 """

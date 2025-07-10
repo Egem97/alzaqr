@@ -1,7 +1,7 @@
 import streamlit as st
 
 from views.tools import qrtool, dashboard, qrgenerator
-from views.prod import explorer_prod_excel
+from views.prod import explorer_prod_excel, tunel_qr_enfiramiento
 
 
 
@@ -14,6 +14,7 @@ def pages():
         st.Page(page = dashboard,title="Datos Agrupados",icon = "🔎") 
     ]
     page_dict["Producción"] = [
-        st.Page(page = explorer_prod_excel,title="Explorer Data",icon = "📈")
+        st.Page(page = explorer_prod_excel,title="Explorer Data",icon = "📈"),
+        st.Page(page = tunel_qr_enfiramiento,title="Tunel QR Enfiramiento",icon = "🧊")
     ]
     return page_dict
