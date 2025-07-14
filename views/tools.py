@@ -7,61 +7,77 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
 from io import StringIO, BytesIO
 from utils.helpers import crear_pdf, generar_qr
 from utils.components import aggrid_builder
+from utils.g_sheets import read_sheet
 
 def qrtool():
     styles(2)
     col_header1,col_header2 = st.columns([6,6])
     with col_header1:
         st.title("Generador de QR")
-    with col_header2:
-        with st.expander("SUBIR ARCHIVO EXCEL",expanded=True):
-            uploaded_file = st.file_uploader("Escoja su archivo excel", accept_multiple_files=False,type=['xlsx'],key="uploaded_file")
-    #with col_header3:
-    try:
-        df =pd.read_excel(uploaded_file,dtype={'N° TARJETA PALLET': str})
+    
+    
+    #try:
+    data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
+    df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
+    del data
+      
+    df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].str.replace(",", ".", regex=False).astype(float)
+    df["KILOS BRUTO"] = df["KILOS BRUTO"].str.replace(",", ".", regex=False).astype(float)
+    df["KILOS NETO"] = df["KILOS NETO"].str.replace(",", ".", regex=False).astype(float)
+    df["N° JABAS"] = df["N° JABAS"].astype(float)
+    df["N° JARRAS"] = df["N° JARRAS"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].str.replace(",", ".", regex=False).astype(float)
+    df["TEMPERATURA"] = df["TEMPERATURA"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].str.replace(",", ".", regex=False).astype(float)
+    df["DIF"] = df["DIF"].str.replace(",", ".", regex=False).astype(float)
+    df["TRASLADO"] = df["TRASLADO"].str.replace(",", ".", regex=False).astype(float)
+
+    df["PESO PALLET"] = df["PESO PALLET"].astype(float)
+   
+        #df =pd.read_excel(uploaded_file,dtype={'N° TARJETA PALLET': str})
         #df['N° TARJETA PALLET'] = df['N° TARJETA PALLET'].astype(str)
         #st.write(df['N° TARJETA PALLET'].unique())
-        var_category = ['CODIGO QR','EMPRESA','TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET',  'PLACA','N° TARJETA PALLET','GUIA']
-        var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
-        df = df[df['FECHA RECEPCION'].notna()]
-        df['FECHA RECEPCION'] = pd.to_datetime(df['FECHA RECEPCION']).dt.date
-        df['FECHA SALIDA CAMPO'] = pd.to_datetime(df['FECHA SALIDA CAMPO']).dt.date 
-        df['N° VIAJE'] = df['N° VIAJE'].astype(str)
+    var_category = ['CODIGO QR','EMPRESA','TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET',  'PLACA','N° TARJETA PALLET','GUIA']
+    var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
+    df = df[df['FECHA RECEPCION'].notna()]
+    df['FECHA RECEPCION'] = pd.to_datetime(df['FECHA RECEPCION'], dayfirst=True).dt.strftime('%Y-%m-%d')
+    df['FECHA SALIDA CAMPO'] = pd.to_datetime(df['FECHA SALIDA CAMPO'], dayfirst=True).dt.strftime('%Y-%m-%d')
+    df['N° VIAJE'] = df['N° VIAJE'].astype(str)
         
-        df['T° ESTADO'] = df['T° ESTADO'].fillna("-")
-        df[var_category] = df[var_category].fillna("-")
-        df[var_numeric] = df[var_numeric].fillna(0)
+    df['T° ESTADO'] = df['T° ESTADO'].fillna("-")
+    df[var_category] = df[var_category].fillna("-")
+    df[var_numeric] = df[var_numeric].fillna(0)
         
-        df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
+    df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
 
-        fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
+    fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
             
             
             #del df
-        fcol1,fcol2,fcol3,fcol4 = st.columns(4)
-        with fcol1:
-                fecha_filtro = st.selectbox("Fecha Recepción",fecha_recep_list,index=None,placeholder="Seleccione una fecha")
-        if fecha_filtro is not None:
-                df = df[df["FECHA RECEPCION"]==fecha_filtro]
-        viaje_list =sorted(df['N° VIAJE'].unique())
-        with fcol2:
+    fcol1,fcol2,fcol3,fcol4 = st.columns(4)
+    with fcol1:
+            fecha_filtro = st.selectbox("Fecha Recepción",fecha_recep_list,index=None,placeholder="Seleccione una fecha")
+    if fecha_filtro is not None:
+            df = df[df["FECHA RECEPCION"]==fecha_filtro]
+    viaje_list =sorted(df['N° VIAJE'].unique())
+    with fcol2:
                 viaje_filtro = st.multiselect("N° de Viaje",viaje_list,placeholder="Seleccione un N° de Viaje")
                 if len(viaje_filtro)> 0:
                     df = df[df["N° VIAJE"].isin(viaje_filtro)]
-        tarjeta_list =sorted(df['N° TARJETA PALLET'].unique())
-        with fcol3:
+    tarjeta_list =sorted(df['N° TARJETA PALLET'].unique())
+    with fcol3:
                 tarja_filtro = st.selectbox("N° de Tarja",tarjeta_list,index=None,placeholder="Seleccione una tarja")
                 if tarja_filtro is not None:
                     df = df[df["N° TARJETA PALLET"]==tarja_filtro]
-        with fcol4:
+    with fcol4:
                 find_cod = st.text_input("Busque el QR",placeholder="Ingrese el codigo qr")
-    except:
-        pass
+    #except:
+    #    st.error("Error al cargar la información")
 
         
     
 
-    if uploaded_file is not None:
+    if df is not None:
 
         st.session_state['uploaded_dataframe'] = df
         
@@ -82,6 +98,9 @@ def qrtool():
         df = df[df["CODIGO QR"].str.contains(find_cod)]
         show_dff = df.copy()
         show_dff = show_dff[['CODIGO QR','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','CALIBRE','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
+        #st.write(show_dff.shape)
+        #st.write(len(show_dff['CODIGO QR'].unique()))
+        #show_dff.to_excel("show_dff.xlsx",index=False)
         gb = GridOptionsBuilder.from_dataframe(show_dff)
         gb.configure_selection(selection_mode="multiple", use_checkbox=True,header_checkbox=True)
         #
