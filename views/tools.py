@@ -20,18 +20,25 @@ def qrtool():
     data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
     df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
     del data
-      
+    #st.dataframe(df)
+    #print(df["N° JABAS"].unique()	)
     df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS BRUTO"] = df["KILOS BRUTO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS NETO"] = df["KILOS NETO"].str.replace(",", ".", regex=False).astype(float)
+    df["N° JABAS"] = df["N° JABAS"].replace('',0)
     df["N° JABAS"] = df["N° JABAS"].astype(float)
+    df["N° JARRAS"] = df["N° JARRAS"].replace('','0')
+    
     df["N° JARRAS"] = df["N° JARRAS"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].replace('',"0")
     df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].str.replace(",", ".", regex=False).astype(float)
     df["TEMPERATURA"] = df["TEMPERATURA"].str.replace(",", ".", regex=False).astype(float)
+    df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].replace('',"0")
     df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].str.replace(",", ".", regex=False).astype(float)
     df["DIF"] = df["DIF"].str.replace(",", ".", regex=False).astype(float)
     df["TRASLADO"] = df["TRASLADO"].str.replace(",", ".", regex=False).astype(float)
 
+    df["PESO PALLET"] = df["PESO PALLET"].replace('',"0")
     df["PESO PALLET"] = df["PESO PALLET"].astype(float)
    
         #df =pd.read_excel(uploaded_file,dtype={'N° TARJETA PALLET': str})

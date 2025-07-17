@@ -302,21 +302,21 @@ def tunel_qr_enfiramiento():
      # 1 a 15
 
     #st.write("### Matriz de posiciones de almacenamiento (3 niveles x 15 columnas)")
-    st.write("### CAMARA 1")
+    st.write("### CAMARA 2")
     with st.container(border=True):
         niveles = ['S', 'M', 'I']
         columnas = list(range(1, 16)) 
         for fila_idx, nivel in enumerate(niveles, start=1):
             cols = st.columns(len(columnas))
             for idx, col_num in enumerate(columnas):
-                code = f"C1C({col_num}-{fila_idx}){nivel}"
+                code = f"C2F{col_num}{nivel}"#{col_num}-{fila_idx}
                 qr_img = generar_qr(code)
                 img_buffer = BytesIO()
                 qr_img.save(img_buffer, format='PNG')
                 img_buffer.seek(0)
                 with cols[idx]:
                     st.image(img_buffer, width=80)
-                    st.write(f"**{code}**")
+                    st.write(f"****{code}****",width=300)
 
 
 """
