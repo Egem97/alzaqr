@@ -3,3 +3,4 @@ developmentMode = false
 
 [server]
 maxMessageSize = 100000000
+runOnSave = true
