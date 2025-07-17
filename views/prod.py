@@ -28,7 +28,7 @@ def explorer_prod_excel():
     
     if uploaded_file is not None:
         df = pd.read_excel(uploaded_file,sheet_name="BD")
-        print(df.columns)
+        
         df = df[df["F. PRODUCCION"].notna()]
         df["F. PRODUCCION"] = pd.to_datetime(df["F. PRODUCCION"]).dt.date
         df["CONTENEDOR"] = df["CONTENEDOR"].fillna("NO ESPECIFICADO")

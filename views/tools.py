@@ -11,7 +11,7 @@ from utils.g_sheets import read_sheet
 
 def qrtool():
     styles(2)
-    col_header1,col_header2 = st.columns([6,6])
+    col_header1,col_header2,col_header3,col_header4,col_header5 = st.columns([5,2,2,2,2])
     with col_header1:
         st.title("Generador de QR")
     
@@ -19,7 +19,10 @@ def qrtool():
     #try:
     data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
     df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
+    #st.dataframe(df)
+    #df.to_excel("recepcion.xlsx",index=False)
     del data
+    
     #st.dataframe(df)
     #print(df["N° JABAS"].unique()	)
     df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].str.replace(",", ".", regex=False).astype(float)
@@ -40,10 +43,15 @@ def qrtool():
 
     df["PESO PALLET"] = df["PESO PALLET"].replace('',"0")
     df["PESO PALLET"] = df["PESO PALLET"].astype(float)
-   
-        #df =pd.read_excel(uploaded_file,dtype={'N° TARJETA PALLET': str})
-        #df['N° TARJETA PALLET'] = df['N° TARJETA PALLET'].astype(str)
-        #st.write(df['N° TARJETA PALLET'].unique())
+    
+    df["DETALLE"] = df["DETALLE"].fillna("N/A")
+    df["DETALLE"] = df["DETALLE"].str.strip()
+    df["#CAJAS"] = df["#CAJAS"].replace('',"0")
+    df["#CAJAS"] = df["#CAJAS"].astype(int)
+
+    df["FUNDO"] = df["FUNDO"].str.strip()
+
+
     var_category = ['CODIGO QR','EMPRESA','TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET',  'PLACA','N° TARJETA PALLET','GUIA']
     var_numeric = ["KILOS BRUTO","KILOS NETO","PESO NETO CAMPO","N° JABAS","N° JARRAS"]
     df = df[df['FECHA RECEPCION'].notna()]
@@ -61,22 +69,28 @@ def qrtool():
             
             
             #del df
-    fcol1,fcol2,fcol3,fcol4 = st.columns(4)
+    fcol1,fcol2,fcol3,fcol4,fcol5 = st.columns(5)
     with fcol1:
             fecha_filtro = st.selectbox("Fecha Recepción",fecha_recep_list,index=None,placeholder="Seleccione una fecha")
     if fecha_filtro is not None:
             df = df[df["FECHA RECEPCION"]==fecha_filtro]
     viaje_list =sorted(df['N° VIAJE'].unique())
+    detalle_list = sorted(df["DETALLE"].unique())
     with fcol2:
+                detalle_filtro = st.selectbox("DETALLE",detalle_list,index=None,placeholder="Seleccione detalle")
+                if detalle_filtro is not None:
+                    df = df[df["DETALLE"]==detalle_filtro]
+    tarjeta_list =sorted(df['N° TARJETA PALLET'].unique())
+    with fcol3:
                 viaje_filtro = st.multiselect("N° de Viaje",viaje_list,placeholder="Seleccione un N° de Viaje")
                 if len(viaje_filtro)> 0:
                     df = df[df["N° VIAJE"].isin(viaje_filtro)]
     tarjeta_list =sorted(df['N° TARJETA PALLET'].unique())
-    with fcol3:
+    with fcol4:
                 tarja_filtro = st.selectbox("N° de Tarja",tarjeta_list,index=None,placeholder="Seleccione una tarja")
                 if tarja_filtro is not None:
                     df = df[df["N° TARJETA PALLET"]==tarja_filtro]
-    with fcol4:
+    with fcol5:
                 find_cod = st.text_input("Busque el QR",placeholder="Ingrese el codigo qr")
     #except:
     #    st.error("Error al cargar la información")
@@ -90,7 +104,7 @@ def qrtool():
         
         
         df = df.groupby([
-            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA','CALIBRE','T° ESTADO'
+            'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA','CALIBRE','T° ESTADO','DETALLE'
             ]).agg(
                 {
                     "KILOS BRUTO": "sum",
@@ -98,13 +112,42 @@ def qrtool():
                     "PESO NETO CAMPO": "sum",
                     "N° JABAS": "sum",
                     "N° JARRAS": "sum",
+                    "#CAJAS": "sum"
                 }
             ).reset_index()
+        with col_header2:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f8f9fa;">
+                <p style="margin: 0; font-size: 14px; color: #666;">N° Pallets</p>
+                <p style="margin: 0; font-size: 20px; font-weight: bold; color: #333;">{len(df['CODIGO QR'].unique()):,}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_header3:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f8f9fa;">
+                <p style="margin: 0; font-size: 14px; color: #666;">Peso Neto Campo</p>
+                <p style="margin: 0; font-size: 20px; font-weight: bold; color: #333;">{df['PESO NETO CAMPO'].sum().round(1):,}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_header4:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f8f9fa;">
+                <p style="margin: 0; font-size: 14px; color: #666;">Peso Neto</p>
+                <p style="margin: 0; font-size: 20px; font-weight: bold; color: #333;">{df['KILOS NETO'].sum().round(1):,}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_header5:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f8f9fa;">
+                <p style="margin: 0; font-size: 14px; color: #666;">Peso Bruto</p>
+                <p style="margin: 0; font-size: 20px; font-weight: bold; color: #333;">{df['KILOS BRUTO'].sum().round(1):,}</p>
+            </div>
+            """, unsafe_allow_html=True)
         
         df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].round(2)
         df = df[df["CODIGO QR"].str.contains(find_cod)]
         show_dff = df.copy()
-        show_dff = show_dff[['CODIGO QR','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','CALIBRE','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS']]
+        show_dff = show_dff[['CODIGO QR','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','CALIBRE','KILOS BRUTO','KILOS NETO','PESO NETO CAMPO','N° JABAS','N° JARRAS','#CAJAS']]
         #st.write(show_dff.shape)
         #st.write(len(show_dff['CODIGO QR'].unique()))
         #show_dff.to_excel("show_dff.xlsx",index=False)
@@ -123,6 +166,7 @@ def qrtool():
                                 height=550
         )
         #st.write(grid_response['selected_rows'])
+        
         try:
             #st.write(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))
             df = df[df["N° TARJETA PALLET"].isin(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))]
@@ -158,7 +202,9 @@ def qrtool():
                         'peso_neto': df["KILOS NETO"].values[i],
                         'calibre': df["CALIBRE"].values[i],
                         'temperatura_estado': df["T° ESTADO"].values[i],
-                        'tunel_enfriamiento': ""
+                        'tunel_enfriamiento': "",
+                        'detalle': df["DETALLE"].values[i],
+                        'num_cajas': df["#CAJAS"].values[i]
                     }
                     lista_datos.append(datos)
                 
@@ -188,9 +234,9 @@ def qrtool():
 
 def dashboard():
     styles(1)
-    col_header1,col_header2,col_header3,col_header4 = st.columns([4,3,2,2])
+    col_header1,col_header2,col_header3,col_header4,col_header5 = st.columns([4,2,2,2,2])
     with col_header1:
-        st.title("📈 Análisis de Datos")
+        st.title("📈Datos de Recepcion")
     
     
     # Verificar si hay datos disponibles en session state
@@ -203,6 +249,7 @@ def dashboard():
         list_viaje = sorted(df["N° VIAJE"].unique())
         #list_empresa = sorted(df["EMPRESA"].unique())
         list_fundo = sorted(df["FUNDO"].unique())
+        list_detalle = sorted(df["DETALLE"].unique())
         #list_variedad = sorted(df["VARIEDAD"].unique())
         #list_tarjeta = sorted(df["N° TARJETA PALLET"].unique())
         #list_jaba = sorted(df["JABA"].unique())
@@ -218,6 +265,10 @@ def dashboard():
             fundo = st.selectbox("Fundo",list_fundo,index=None,placeholder="Seleccione un Fundo")    
             if fundo is not None:
                 df = df[df["FUNDO"]==fundo]
+        with col_header5:
+            detalle_input = st.selectbox("Detalle",list_detalle,index=None,placeholder="Seleccione un Detalle")
+            if detalle_input is not None:
+                df = df[df["DETALLE"]==detalle_input]
         #st.dataframe(df)
         tab1,tab2,tab3,tab4 = st.tabs(["Reporte","Stock","RP Semana","Campaña 2025"])
         with tab1:
@@ -341,14 +392,17 @@ def dashboard():
 
             with tab3:
                 df_wsemana = df.copy()
+                df_wsemana["SEMANA"] = df_wsemana["SEMANA"].astype(str)
                 #st.dataframe(df_wsemana)
-                df_wsemana["FECHA RECEPCION"] = pd.to_datetime(df_wsemana["FECHA RECEPCION"], dayfirst=True, errors='coerce')
-                df_wsemana["SEMANA"] = df_wsemana["FECHA RECEPCION"].dt.isocalendar().week
-                df_wsemana["FECHA RECEPCION"] = pd.to_datetime(df_wsemana["FECHA RECEPCION"]).dt.strftime("%d/%m/%Y")
+                #df_wsemana["FECHA RECEPCION"] = pd.to_datetime(df_wsemana["FECHA RECEPCION"], dayfirst=True, errors='coerce')
+                #df_wsemana["SEMANA"] = df_wsemana["FECHA RECEPCION"].dt.isocalendar().week
+                #df_wsemana["FECHA RECEPCION"] = pd.to_datetime(df_wsemana["FECHA RECEPCION"]).dt.strftime("%d/%m/%Y")
                 df_wsemana["KILOS NETO"] = df_wsemana["KILOS NETO"].round(2)
                 #st.dataframe(df_wsemana)
                 semana = st.selectbox("Semana",df_wsemana["SEMANA"].unique())
+                
                 df_wsemana = df_wsemana[df_wsemana["SEMANA"]==semana]
+                
                 #df_wsemana_group = df_wsemana.groupby([
                 #    "EMPRESA","FUNDO","VARIEDAD","TIPO PRODUCTO","FECHA RECEPCION"
                 #]).agg({"KILOS NETO": "sum"}).reset_index()
@@ -380,8 +434,8 @@ def dashboard():
             df_week = df.copy()
             
             df_week["FECHA RECEPCION"] = pd.to_datetime(df_week["FECHA RECEPCION"], dayfirst=True, errors='coerce')
-            df_week["SEMANA"] = df_week["FECHA RECEPCION"].dt.isocalendar().week
-            df_week["SEMANA"] = df_week["SEMANA"].astype(str)
+            #df_week["SEMANA"] = df_week["FECHA RECEPCION"].dt.isocalendar().week
+            #df_week["SEMANA"] = df_week["SEMANA"].astype(str)
             df_week["FECHA RECEPCION"] = pd.to_datetime(df_week["FECHA RECEPCION"]).dt.strftime("%d/%m/%Y")
             df_week["KILOS NETO"] = df_week["KILOS NETO"].round(2)
             week_pivot = pd.pivot_table(
@@ -398,7 +452,7 @@ def dashboard():
             total_row_week["EMPRESA"] = "TOTAL"
             for col in week_pivot.columns:
                 if col not in ["EMPRESA", "FUNDO", "VARIEDAD", "TIPO PRODUCTO"]:
-                    total_row_week[col] = week_pivot[col].sum()
+                    total_row_week[col] = week_pivot[col].sum().round(0)
             week_pivot = pd.concat([week_pivot, pd.DataFrame([total_row_week])], ignore_index=False)
             
             aggrid_builder(week_pivot)
