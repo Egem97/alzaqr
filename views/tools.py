@@ -10,6 +10,7 @@ from utils.components import aggrid_builder
 from utils.g_sheets import read_sheet
 
 def qrtool():
+    st.session_state['uploaded_dataframe'] = None
     styles(2)
     col_header1,col_header2,col_header3,col_header4,col_header5 = st.columns([5,2,2,2,2])
     with col_header1:
@@ -19,6 +20,7 @@ def qrtool():
     #try:
     data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
     df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
+    
     #st.dataframe(df)
     #df.to_excel("recepcion.xlsx",index=False)
     del data
