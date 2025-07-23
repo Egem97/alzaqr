@@ -478,6 +478,7 @@ def qrgenerator():
         "CANYON BERRIES S.A.C": {"ACORTADOR":"CAN"},
         "TARA FARMS S.A.C": {"ACORTADOR":"TAF"},
         "Q BERRIES S.A.C": {"ACORTADOR":"QBE"},
+        "SAN EFISIO S.A.C": {"ACORTADOR":"SEF"},
         
     }
     dict_fundos_empresa ={
@@ -522,6 +523,11 @@ def qrgenerator():
         "Q BERRIES S.A.C": {
             "FUNDO":{
                 "LICAPA":"LI"
+            }
+        },
+        "SAN EFISIO S.A.C": {
+            "FUNDO":{
+                "SAN EFISIO":"SE"
             }
         }
     }
