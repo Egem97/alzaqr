@@ -16,17 +16,22 @@ def qrtool():
     with col_header1:
         st.title("Generador de QR")
     
-    
-    #try:
-    data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
-    df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
-    
-    #st.dataframe(df)
-    #df.to_excel("recepcion.xlsx",index=False)
-    del data
+    try:
+        #try:
+        data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
+        df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
+        #df.to_excel("recepcion.xlsx",index=False)
+        
+        #st.dataframe(df)
+        #df.to_excel("recepcion.xlsx",index=False)
+        del data
+    except:
+        st.error("Error al cargar la información, actualice la pagina")
     
     #st.dataframe(df)
     #print(df["N° JABAS"].unique()	)
+    df['FECHA RECEPCION'] = df['FECHA SALIDA CAMPO'] 
+    
     df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS BRUTO"] = df["KILOS BRUTO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS NETO"] = df["KILOS NETO"].str.replace(",", ".", regex=False).astype(float)
@@ -37,6 +42,8 @@ def qrtool():
     df["N° JARRAS"] = df["N° JARRAS"].str.replace(",", ".", regex=False).astype(float)
     df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].replace('',"0")
     df["PESO PROMEDIO JARRA"] = df["PESO PROMEDIO JARRA"].str.replace(",", ".", regex=False).astype(float)
+    df["TEMPERATURA"] = df["TEMPERATURA"].fillna("0")
+    df["TEMPERATURA"] = df["TEMPERATURA"].str.replace("", "0", regex=False)
     df["TEMPERATURA"] = df["TEMPERATURA"].str.replace(",", ".", regex=False).astype(float)
     df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].replace('',"0")
     df["PESO PROMEDIO JABA"] = df["PESO PROMEDIO JABA"].str.replace(",", ".", regex=False).astype(float)
@@ -68,7 +75,7 @@ def qrtool():
     df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
 
     fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
-            
+    
             
             #del df
     fcol1,fcol2,fcol3,fcol4,fcol5 = st.columns(5)
@@ -97,7 +104,7 @@ def qrtool():
     #except:
     #    st.error("Error al cargar la información")
 
-        
+            
     
 
     if df is not None:
