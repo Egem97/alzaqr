@@ -5,6 +5,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4 # Cambiado a A4 normal
 from reportlab.lib.utils import ImageReader
 import os
+import pandas as pd
 
 def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     """
@@ -524,14 +525,290 @@ def crear_pdf(lista_datos, logo_path):
     return buffer
 
 
-def generar_qr(data):
+def generar_qr(data, box_size=10):
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10, # Ajustado para el nuevo tamaño de QR
+        box_size=box_size, # Tamaño configurable
         border=2
     )
     qr.add_data(data)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
     return img
+
+def crear_pdf_packing_list(df, logo_path="./src/assets/logo.jpg"):
+    """
+    Crea un PDF del packing list en formato A4 horizontal
+    """
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Frame, PageTemplate
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.platypus import Image
+    import io
+    
+    # Crear buffer para el PDF
+    buffer = io.BytesIO()
+    
+    # Configurar documento A4 horizontal (landscape)
+    from reportlab.lib.pagesizes import A4, landscape
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    
+    # Función para agregar el logo en cada página
+    def add_logo(canvas, doc):
+        if os.path.exists(logo_path):
+            # Obtener las dimensiones de la página
+            page_width, page_height = landscape(A4)
+            
+            # Posicionar el logo en la esquina superior derecha
+            logo_width = 1.2*inch
+            logo_height = 1.2*inch
+            logo_x = page_width - logo_width +20 # 30 puntos de margen derecho
+            logo_y = page_height - logo_height +10 # 30 puntos de margen superior
+            
+            # Dibujar el logo
+            canvas.drawImage(logo_path, logo_x, logo_y, width=50, height=70)
+    
+    # Crear el template de página con el logo
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+    template = PageTemplate(id='logo_template', frames=[frame], onPage=add_logo)
+    doc.addPageTemplates([template])
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    
+    # Elementos del documento
+    elements = []
+    
+    # Título
+    title = Paragraph("PACKING LIST", title_style)
+    elements.append(title)
+    elements.append(Spacer(0, 0))  # Reducir espacio entre título y tabla
+    
+    # Información del header - tabla más pequeña y centrada
+    header_data = [
+        ["N° DESPACHO:", "FCL " + str(df["Nº FCL"].iloc[0]) if len(df) > 0 else "", "PUERTO DE CARGA:", "", "ETD:", ""],
+        ["FECHA DE DESPACHO:", "", "DESTINO:", "", "ETA:", ""],
+        ["EXPORTADOR:", "", "N° DE CONTENEDOR:", "", "PESO NETO:", ""],
+        ["CLIENTE:", "", "BOOKING:", "", "PESO BRUTO:", ""],
+        ["CONSIGNATARIO:", "", "NAVE:", "", "", ""]
+    ]
+    
+    # Calcular ancho total disponible para centrar la tabla
+    total_width = landscape(A4)[0]-180  # Ancho total menos márgenes
+    header_table_width = 9*inch  # Ancho más pequeño para la tabla header
+    header_margin = (total_width - header_table_width) / 2  # Margen para centrar
+    
+    header_table = Table(header_data, colWidths=[1.3*inch, 1.8*inch, 1.3*inch, 1.8*inch, 1.3*inch, 1.3*inch])
+    header_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('BACKGROUND', (2, 0), (2, -1), colors.lightgrey),
+        ('BACKGROUND', (4, 0), (4, -1), colors.lightgrey),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (4, 0), (4, -1), 'Helvetica-Bold'),
+        ('LEFTPADDING', (0, 0), (-1, -1), header_margin),  # Centrar la tabla
+    ]))
+    
+    elements.append(header_table)
+    elements.append(Spacer(1, 10))  # Reducir espacio después de la tabla header
+    
+    # Preparar datos de la tabla principal
+    # Usar nombres originales del dataframe
+    table_columns = [
+        "Nº FCL", "Nº  PALLET", "FECHA DE PRODUCCIÓN", "PRODUCTO", "VARIEDAD", 
+        "NOMBRE DEL FUNDO", "LDP", "NÚMERO DE GLOBAL GAP", "CODIGO DE PRODUCTOR",
+        "DESCRIPCIÓN", "PESO DE CAJA", " Nº CAJAS", "TOTAL KILOS NETO (KG)"
+    ]
+    
+    # Nombres de columnas para mostrar en el PDF (con saltos de línea)
+    display_columns = [
+        "Nº FCL", "Nº\nPALLET", "FECHA DE\nPRODUCCIÓN", "PRODUCTO", "VARIEDAD", 
+        "NOMBRE DEL\nFUNDO", "LDP", "NÚMERO DE\nGLOBAL GAP", "CODIGO DE\nPRODUCTOR",
+        "DESCRIPCIÓN", "PESO DE\nCAJA", "Nº\nCAJAS", "TOTAL KILOS\nNETO (KG)"
+    ]
+    
+    # Crear tabla con los datos
+    table_data = [display_columns]  # Header con nombres formateados para PDF
+    
+    # Calcular totales
+    total_peso_caja = df[" Nº CAJAS"].sum()
+    total_kilos = df["TOTAL KILOS NETO (KG)"].sum()
+    
+    # Agregar filas de datos
+    for _, row in df.iterrows():
+        table_row = []
+        for col in table_columns:  # Usar nombres originales para acceder a los datos
+            value = row[col]
+            # Formatear fechas
+            if col == "FECHA DE PRODUCCIÓN" and pd.notna(value):
+                if hasattr(value, 'strftime'):
+                    value = value.strftime("%d/%m/%Y")
+                else:
+                    value = str(value)
+            # Formatear números grandes
+            elif col == "NÚMERO DE GLOBAL GAP" and pd.notna(value):
+                value = f"{value:.0f}" if isinstance(value, (int, float)) else str(value)
+            # Formatear números decimales
+            elif col in [" Nº CAJAS", "TOTAL KILOS NETO (KG)"] and pd.notna(value):
+                value = f"{value:.1f}" if isinstance(value, (int, float)) else str(value)
+            else:
+                value = str(value) if pd.notna(value) else ""
+            table_row.append(value)
+        table_data.append(table_row)
+    
+    # Agregar fila de totales
+    total_row = ["Total general", "", "", "", "", "", "", "", "", "", "", f"{total_peso_caja:.0f}", f"{total_kilos:.1f}"]
+    table_data.append(total_row)
+    
+    # Crear tabla principal - optimizado para máximo uso del espacio horizontal con headers multilínea
+    # Ajustado para dar más espacio a FCL, CODIGO DE PRODUCTOR y DESCRIPCIÓN
+    col_widths = [1.2*inch, 0.7*inch, 0.7*inch, 0.6*inch, 0.7*inch, 0.9*inch, 0.7*inch, 0.9*inch, 1.2*inch, 1.8*inch, 0.6*inch, 0.6*inch, 0.8*inch]
+    main_table = Table(table_data, colWidths=col_widths)
+    
+    # Estilo para la tabla principal con headers multilínea
+    main_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 1), (-1, -2), 'LEFT'),  # Datos alineados a la izquierda (excluyendo totales)
+        # Alineación específica para columnas numéricas (últimas 3 columnas)
+        ('ALIGN', (10, 1), (12, -2), 'RIGHT'),  # PESO DE CAJA, Nº CAJAS, TOTAL KILOS alineados a la derecha
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Header en negrita
+        ('FONTSIZE', (0, 0), (-1, -1), 5),
+        # Tamaño de fuente mayor para columnas numéricas (últimas 3 columnas)
+        ('FONTSIZE', (10, 1), (12, -2), 6),  # PESO DE CAJA, Nº CAJAS, TOTAL KILOS
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.lightgrey]),  # Excluyendo fila de totales
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('WORDWRAP', (0, 0), (-1, 0), True),  # Permitir salto de línea en headers
+        ('LEADING', (0, 0), (-1, 0), 8),  # Espaciado entre líneas en headers
+        # Estilo especial para la fila de totales
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),  # Totales en negrita
+        ('FONTSIZE', (0, -1), (-1, -1), 6),  # Tamaño de fuente ligeramente mayor para totales
+        ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue),  # Fondo azul claro para totales
+        ('ALIGN', (0, -1), (-1, -1), 'CENTER'),  # Totales centrados
+    ]))
+    
+    elements.append(main_table)
+    
+    # Generar PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+def crear_pdf_qr_tunel(CAMARA):
+    """
+    Crea un PDF con los códigos QR del túnel de enfriamiento organizados en grilla
+    Orden: por niveles (S, M, I) con columnas en filas de 2
+    """
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Configuración de la grilla
+    niveles = ['S', 'M', 'I']
+    columnas = list(range(1, 16))  # 1 a 15
+    
+    # Dimensiones más grandes para recuadros QR
+    qr_box_width = 260
+    qr_box_height = 280
+    qr_size = 210  # QR aún más grande
+    margin_left = 10
+    margin_top = 10
+    spacing_x = 270 # Espacio horizontal entre recuadros
+    spacing_y = 250 # Espacio vertical entre recuadros
+    
+    # Configuración de grilla: 2 columnas, 3 filas (una por nivel)
+    
+    # Título en la primera página
+    #c.setFont("Helvetica-Bold", 18)
+    #c.drawCentredString(width/2, height - 30, "TÚNEL QR ENFRIAMIENTO - CÁMARA 2")
+    
+    # Procesar por pares de columnas (cada página tendrá 2 columnas × 3 niveles = 6 QRs)
+    for i in range(0, len(columnas), 2):  # Procesar columnas de 2 en 2
+        col_pair = columnas[i:i+2]  # Tomar par de columnas (ej: [1,2], [3,4], etc.)
+        
+        # Si no es la primera página, crear nueva página
+        if i > 0:
+            c.showPage()
+            #c.setFont("Helvetica-Bold", 18)
+            #c.drawCentredString(width/2, height - 30, "TÚNEL QR ENFRIAMIENTO - CÁMARA 2")
+        
+        # Para cada nivel (S, M, I) crear una fila
+        for nivel_idx, nivel in enumerate(niveles):
+            # Mapear nivel a número
+            if nivel == "S":
+                nivel_num = "3"
+            elif nivel == "M":
+                nivel_num = "2"
+            elif nivel == "I":
+                nivel_num = "1"
+            
+            # Para cada columna en el par actual (máximo 2 columnas)
+            for col_idx, col_num in enumerate(col_pair):
+                # Calcular posición en la grilla de la página actual
+                row = nivel_idx  # Fila basada en el nivel (0=S, 1=M, 2=I)
+                col = col_idx    # Columna (0 o 1)
+                
+                # Calcular posición del recuadro
+                x_pos = margin_left + (col * spacing_x)
+                y_pos = height - margin_top - 20 - (row * spacing_y)
+                
+                # Dibujar recuadro con bordes
+                #c.setStrokeColorRGB(0, 0, 0)
+                #c.setLineWidth(3)
+                #c.rect(x_pos, y_pos - qr_box_height, qr_box_width, qr_box_height, stroke=1, fill=0)
+                
+                # Datos del QR
+                code = f"{CAMARA}{col_num}{nivel}"
+                text = f"C{CAMARA}F{col_num}P(1-6){nivel}"
+                text_nivel = f"NIVEL {nivel_num}"
+                
+                # Generar y dibujar QR más grande
+                qr_img = generar_qr(code, box_size=15)  # QR con mayor resolución
+                qr_buffer = io.BytesIO()
+                qr_img.save(qr_buffer, format="PNG")
+                qr_buffer.seek(0)
+                
+                # Centrar QR en el recuadro
+                qr_x = x_pos + (qr_box_width - qr_size) / 2
+                qr_y = y_pos - 50 - qr_size
+                c.drawImage(ImageReader(qr_buffer), qr_x+30, qr_y+40, width=qr_size, height=qr_size)
+                
+                # Dibujar texto más grande debajo del QR
+                c.setFont("Helvetica-Bold", 16)
+                text_width = c.stringWidth(text, "Helvetica-Bold", 5)
+                text_x = x_pos + (qr_box_width - text_width) / 2
+                c.drawString(text_x, qr_y + 35, text)
+                
+                # Dibujar texto del nivel más grande
+                c.setFont("Helvetica-Bold", 16)
+                text_nivel_width = c.stringWidth(text_nivel, "Helvetica-Bold", -5)
+                text_nivel_x = x_pos + (qr_box_width - text_nivel_width) / 2
+                c.drawString(text_nivel_x, qr_y + 15, text_nivel)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+

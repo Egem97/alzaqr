@@ -13,7 +13,7 @@ scope = [
 creds = ServiceAccountCredentials.from_json_keyfile_name("nifty-might-269005-cd303aaaa33f.json", scope)
 client = gspread.authorize(creds)
 
-@st.cache_data(ttl=180)  # Cache se actualiza cada 3 minutos (180 segundos)
+@st.cache_data(show_spinner="Cargando datos...",ttl=180)  # Cache se actualiza cada 3 minutos (180 segundos)
 def read_sheet(key_sheet, sheet_name):
     try:
         spreadsheet = client.open_by_key(key_sheet)

@@ -7,9 +7,8 @@ from datetime import datetime
 from styles import styles
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
 from io import StringIO, BytesIO
-from utils.helpers import crear_pdf, generar_qr
+from utils.helpers import crear_pdf, generar_qr, crear_pdf_qr_tunel
 from utils.components import aggrid_builder,aggrid_builder_prod,aggrid_editing_prod
-from utils.helpers import generar_qr
 
 
 def explorer_prod_excel():
@@ -298,25 +297,45 @@ def explorer_prod_excel():
 def tunel_qr_enfiramiento():
     styles(2)
     st.title("🧊TUNEL QR ENFIRAMIENTO ")
-    
+    CAMARA = 1
      # 1 a 15
 
     #st.write("### Matriz de posiciones de almacenamiento (3 niveles x 15 columnas)")
-    st.write("### CAMARA 2")
+    st.write(f"### CAMARA {CAMARA}")
     with st.container(border=True):
         niveles = ['S', 'M', 'I']
         columnas = list(range(1, 16)) 
         for fila_idx, nivel in enumerate(niveles, start=1):
+            if nivel == "S":
+                nivel_num = "3"
+            elif nivel == "M":
+                nivel_num = "2"
+            elif nivel == "I":
+                nivel_num = "1"
             cols = st.columns(len(columnas))
             for idx, col_num in enumerate(columnas):
-                code = f"C2F{col_num}{nivel}"#{col_num}-{fila_idx}
+                code = f"{CAMARA}{col_num}{nivel}"#{col_num}-{fila_idx}
+                text = f"C{CAMARA}F{col_num}P(1-6){nivel}"
+                text_nivel = f"NIVEL {nivel_num}"
                 qr_img = generar_qr(code)
                 img_buffer = BytesIO()
                 qr_img.save(img_buffer, format='PNG')
                 img_buffer.seek(0)
                 with cols[idx]:
-                    st.image(img_buffer, width=80)
-                    st.write(f"****{code}****",width=300)
+                    st.image(img_buffer)
+                    st.write(f"****{text}****")
+                    st.write(f"****{text_nivel}****")
+    
+    # Botón para descargar PDF
+    st.subheader("📄 Descargar PDF")
+    if st.button("Generar y Descargar PDF con QRs", type="primary"):
+        pdf_buffer = crear_pdf_qr_tunel(CAMARA)
+        st.download_button(
+            label="📥 Descargar PDF QRs Túnel",
+            data=pdf_buffer.getvalue(),
+            file_name="qr_tunel_enfriamiento_camara2.pdf",
+            mime="application/pdf"
+        )
 
 
 """
