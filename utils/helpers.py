@@ -537,7 +537,7 @@ def generar_qr(data, box_size=10):
     img = qr.make_image(fill_color="black", back_color="white")
     return img
 
-def crear_pdf_packing_list(df, logo_path="./src/assets/logo.jpg"):
+def crear_pdf_packing_list(df, logo_path="./src/assets/logo.jpg", header_data=None):
     """
     Crea un PDF del packing list en formato A4 horizontal
     """
@@ -597,13 +597,15 @@ def crear_pdf_packing_list(df, logo_path="./src/assets/logo.jpg"):
     elements.append(Spacer(0, 0))  # Reducir espacio entre título y tabla
     
     # Información del header - tabla más pequeña y centrada
-    header_data = [
-        ["N° DESPACHO:", "FCL " + str(df["Nº FCL"].iloc[0]) if len(df) > 0 else "", "PUERTO DE CARGA:", "", "ETD:", ""],
-        ["FECHA DE DESPACHO:", "", "DESTINO:", "", "ETA:", ""],
-        ["EXPORTADOR:", "", "N° DE CONTENEDOR:", "", "PESO NETO:", ""],
-        ["CLIENTE:", "", "BOOKING:", "", "PESO BRUTO:", ""],
-        ["CONSIGNATARIO:", "", "NAVE:", "", "", ""]
-    ]
+    if header_data is None:
+        # Datos por defecto si no se proporcionan
+        header_data = [
+            ["N° DESPACHO:", "FCL " + str(df["Nº FCL"].iloc[0]) if len(df) > 0 else "", "PUERTO DE CARGA:", "", "ETD:", ""],
+            ["FECHA DE DESPACHO:", "", "DESTINO:", "", "ETA:", ""],
+            ["EXPORTADOR:", "", "N° DE CONTENEDOR:", "", "PESO NETO:", ""],
+            ["CLIENTE:", "", "BOOKING:", "", "PESO BRUTO:", ""],
+            ["CONSIGNATARIO:", "", "NAVE:", "", "", ""]
+        ]
     
     # Calcular ancho total disponible para centrar la tabla
     total_width = landscape(A4)[0]-180  # Ancho total menos márgenes

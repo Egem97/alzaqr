@@ -185,15 +185,32 @@ def gestion_humana_packing():
     with col_head2:
         uploaded_file = st.file_uploader("Escoja su archivo csv", accept_multiple_files=False,type=['csv'],key="uploaded_file")
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-        df = df.drop(columns=['notes', 'favorite','date_utc', 'time_utc', 'metadata'])
+        df = pd.read_csv(uploaded_file, sep=",", quotechar='"')
+       
+        # Si todavía sale como una sola columna, volver a separarla manualmente
+        if df.shape[1] == 1:
+            df = df.iloc[:, 0].str.split(",", expand=True)
+            df = df.drop(columns=[7, 8,9, 10, 11])
+            df[6] = df[6].str.replace('"0"','')
+            df["text"] = df[4] + "" + df[5] + "" + df[6]
+            df = df.drop(columns=[4, 5,6])
+            df.columns = ['date', 'time', 'time_zone', 'format', 'text']
+            df["time"] = df["time"].str.replace('"','')
+            df["time_zone"] = df["time_zone"].str.replace('"','')
+            df["format"] = df["format"].str.replace('"','')
+            #df["text"] = df["text"].str.replace('"','')
+            #df['text'] = df['text'].apply(extract_dni_datos)
+        else:
+            df = df.drop(columns=['notes', 'favorite','date_utc', 'time_utc', 'metadata'])
         
         
+        #['date', 'time', 'time_zone', 'format', 'text']
         # Procesar la columna text para extraer DNI, nombres y apellidos
         df_procesado = procesar_columna_text(df)
         df_procesado = df_procesado.drop(columns=['text','time_zone'])
         df_procesado = df_procesado.rename(columns={"date":"Fecha","time":"Hora","format":"Formato"})
         df_procesado["DATOS"] = df_procesado["DATOS"].str.replace("http //", "--")
+        df_procesado["DATOS"] = df_procesado["DATOS"].str.replace("Apellidos", "")
         st.dataframe(df_procesado,hide_index=True)
         
         # Crear Excel con formato corporativo
@@ -204,5 +221,4 @@ def gestion_humana_packing():
                 file_name="reporte_marcaciones_gh.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        
         
