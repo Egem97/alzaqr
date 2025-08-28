@@ -205,7 +205,7 @@ def qrtool():
                                 height=550
         )
         #st.write(grid_response['selected_rows'])
-        st.dataframe(df)
+        
         try:
             #st.write(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))
             df = df[df["N° TARJETA PALLET"].isin(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))]
