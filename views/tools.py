@@ -150,6 +150,7 @@ def qrtool():
             return '-'.join(unique_parts)
         try:
             df['OBSERVACIONES'] = df['OBSERVACIONES'].apply(remove_duplicate_text)
+            df["OBSERVACIONES"] = df["OBSERVACIONES"].replace("","-")
         except:
             pass
         with col_header2:
