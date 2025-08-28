@@ -110,8 +110,12 @@ def qrtool():
     if df is not None:
 
         st.session_state['uploaded_dataframe'] = df
-        
-        
+        try:
+            df["OBSERVACIONES"] = df["OBSERVACIONES"].fillna("")
+            df["OBSERVACIONES"] = df["OBSERVACIONES"]+"-"
+        except:
+            pass
+
         df = df.groupby([
             'CODIGO QR','EMPRESA','FECHA RECEPCION', 'TIPO PRODUCTO','FUNDO', 'VARIEDAD', 'N° PALLET', 'N° VIAJE', 'PLACA','N° TARJETA PALLET','GUIA','CALIBRE','T° ESTADO','DETALLE'
             ]).agg(
@@ -121,9 +125,33 @@ def qrtool():
                     "PESO NETO CAMPO": "sum",
                     "N° JABAS": "sum",
                     "N° JARRAS": "sum",
-                    "#CAJAS": "sum"
+                    "#CAJAS": "sum",
+                    "OBSERVACIONES":"sum"
                 }
             ).reset_index()
+        def remove_duplicate_text(text):
+            """
+            Elimina texto repetido en un string
+            Ejemplo: "FRUTA MOJADA-FRUTA MOJADA" -> "FRUTA MOJADA"
+            """
+            if pd.isna(text) or text == "":
+                return text
+            
+            text = str(text)
+            
+            # Dividir por guiones y eliminar duplicados manteniendo el orden
+            parts = text.split('-')
+            unique_parts = []
+            for part in parts:
+                part = part.strip()
+                if part and part not in unique_parts:
+                    unique_parts.append(part)
+            
+            return '-'.join(unique_parts)
+        try:
+            df['OBSERVACIONES'] = df['OBSERVACIONES'].apply(remove_duplicate_text)
+        except:
+            pass
         with col_header2:
             st.markdown(f"""
             <div style="text-align: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f8f9fa;">
@@ -160,6 +188,7 @@ def qrtool():
         #st.write(show_dff.shape)
         #st.write(len(show_dff['CODIGO QR'].unique()))
         #show_dff.to_excel("show_dff.xlsx",index=False)
+        
         gb = GridOptionsBuilder.from_dataframe(show_dff)
         gb.configure_selection(selection_mode="multiple", use_checkbox=True,header_checkbox=True)
         #
@@ -175,7 +204,7 @@ def qrtool():
                                 height=550
         )
         #st.write(grid_response['selected_rows'])
-        
+        st.dataframe(df)
         try:
             #st.write(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))
             df = df[df["N° TARJETA PALLET"].isin(list(grid_response['selected_rows']["N° TARJETA PALLET"].values))]
@@ -213,7 +242,8 @@ def qrtool():
                         'temperatura_estado': df["T° ESTADO"].values[i],
                         'tunel_enfriamiento': "",
                         'detalle': df["DETALLE"].values[i],
-                        'num_cajas': df["#CAJAS"].values[i]
+                        'num_cajas': df["#CAJAS"].values[i],
+                        'observaciones': df["OBSERVACIONES"].values[i]
                     }
                     lista_datos.append(datos)
                 

@@ -107,7 +107,7 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     c.line(line_v2_x, boleta_bottom, line_v2_x, line_h_y)
     
     # --- Columna 1 ---
-    y = table_top
+    y = table_top + 20 ### mopdifica el alto 
     c.setFont(bold, font_size)
     c.drawString(col1_x, y, "CULTIVO:")
     c.setFont(normal, font_size)
@@ -154,6 +154,12 @@ def draw_single_format(c, datos, qr_img, logo_path, y_offset):
     c.drawString(col1_x, y, "VIAJE:")
     c.setFont(normal, 17)
     c.drawString(col1_x + 90, y, f"{datos['viaje']}")
+
+    y -= row_height
+    c.setFont(bold, font_size)
+    c.drawString(col1_x, y, "OBSERVACIONES:")
+    c.setFont(bold, 9)
+    c.drawString(col1_x + 90, y, f"{datos['observaciones']}")
 
     # --- Columna 2 ---
     y = table_top
