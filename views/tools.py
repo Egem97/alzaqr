@@ -20,6 +20,7 @@ def qrtool():
         #try:
         data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
         df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
+        
         #df.to_excel("recepcion.xlsx",index=False)
         
         #st.dataframe(df)
@@ -73,7 +74,7 @@ def qrtool():
     df[var_numeric] = df[var_numeric].fillna(0)
         
     df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
-
+    df = df[df["FECHA RECEPCION"]>="2025-08-01"]
     fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
     
             
