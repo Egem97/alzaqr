@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y apt-transport-https\
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-EXPOSE 3000
+EXPOSE 8001
 
 
-ENTRYPOINT ["streamlit", "run", "app_streamlit.py", "--server.port=3000", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "app_streamlit.py", "--server.port=8001", "--server.address=0.0.0.0"]
