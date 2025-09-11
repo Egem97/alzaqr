@@ -32,6 +32,7 @@ def qrtool():
     #st.dataframe(df)
     #print(df["N° JABAS"].unique()	)
     df['FECHA RECEPCION'] = df['FECHA SALIDA CAMPO'] 
+    df = df[(df['FECHA RECEPCION'].notna())&(df['FECHA SALIDA CAMPO']!="")]
     
     df["PESO NETO CAMPO"] = df["PESO NETO CAMPO"].str.replace(",", ".", regex=False).astype(float)
     df["KILOS BRUTO"] = df["KILOS BRUTO"].str.replace(",", ".", regex=False).astype(float)
@@ -76,7 +77,7 @@ def qrtool():
     df["GUIA CONSOLIDADA"] = df["GUIA CONSOLIDADA"].fillna("-")
     df = df[df["FECHA RECEPCION"]>="2025-08-01"]
     fecha_recep_list =sorted(df['FECHA RECEPCION'].unique())
-    
+        
             
             #del df
     fcol1,fcol2,fcol3,fcol4,fcol5 = st.columns(5)
