@@ -18,9 +18,9 @@ def qrtool():
     
     try:
         #try:
-        data = read_sheet("1PWz0McxGvGGD5LzVFXsJTaNIAEYjfWohqtimNVCvTGQ","KF")
+        data = read_sheet("1cHKNnww-zKMXuRwHX_ZFKKcbQsF9jljVbylfU_ddFQo","KF")
         df = pd.DataFrame(data[1:], columns=data[0],)#dtype={'N° TARJETA PALLET': str}
-        
+        #st.dataframe(df)
         #df.to_excel("recepcion.xlsx",index=False)
         
         #st.dataframe(df)

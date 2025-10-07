@@ -7,7 +7,7 @@ from datetime import datetime
 from styles import styles
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
 from io import StringIO, BytesIO
-from utils.helpers import crear_pdf, generar_qr, crear_pdf_qr_tunel
+from utils.helpers import crear_pdf, generar_qr, crear_pdf_qr_tunel, crear_pdf_qr_bemp
 from utils.components import aggrid_builder,aggrid_builder_prod,aggrid_editing_prod
 
 
@@ -338,7 +338,56 @@ def tunel_qr_enfiramiento():
         )
 
 
-"""
+
+
+def bemp_qr_generator():
+    styles(2)
+    st.title("📦 GENERADOR QR CÓDIGOS BEMP")
+    
+    # Lista de códigos BEMP
+    bemp_codes = [
+        "BEMP-001", "BEMP-003", "BEMP-004", "BEMP-005", "BEMP-006", "BEMP-007", 
+        "BEMP-009", "BEMP-011", "BEMP-012", "BEMP-014", "BEMP-017", "BEMP-018", 
+        "BEMP-019", "BEMP-020", "BEMP-022", "BEMP-023", "BEMP-024", "BEMP-025", 
+        "BEMP-026", "BEMP-028", "BEMP-029", "BEMP-030", "BEMP-031", "BEMP-032", 
+        "BEMP-033", "BEMP-034", "BEMP-035", "BEMP-036", "BEMP-037", "BEMP-038", 
+        "BEMP-041", "BEMP-043", "BEMP-046", "BEMP-048", "BEMP-050", "BEMP-051", 
+        "BEMP-052", "BEMP-054", "BEMP-055", "BEMP-056", "BEMP-058", "BEMP-059", 
+        "BEMP-060", "BEMP-061", "BEMP-062", "BEMP-063", "BEMP-064", "BEMP-065", 
+        "BEMP-066", "BEMP-067", "BEMP-068", "BEMP-070", "BEMP-071", "BEMP-073", 
+        "BEMP-074", "BEMP-075"
+    ]
+    
+    st.write(f"### Total de códigos BEMP: {len(bemp_codes)}")
+    
+    # Mostrar códigos QR en una grilla
+    with st.container(border=True):
+        # Organizar en filas de 6 columnas
+        cols_per_row = 6
+        for i in range(0, len(bemp_codes), cols_per_row):
+            row_codes = bemp_codes[i:i+cols_per_row]
+            cols = st.columns(len(row_codes))
+            
+            for idx, code in enumerate(row_codes):
+                qr_img = generar_qr(code)
+                img_buffer = BytesIO()
+                qr_img.save(img_buffer, format='PNG')
+                img_buffer.seek(0)
+                
+                with cols[idx]:
+                    st.image(img_buffer, width=120)
+                    st.write(f"**{code}**")
+    
+    # Botón para descargar PDF
+    st.subheader("📄 Descargar PDF")
+    if st.button("Generar y Descargar PDF con QRs BEMP", type="primary"):
+        pdf_buffer = crear_pdf_qr_bemp(bemp_codes)
+        st.download_button(
+            label="📥 Descargar PDF QRs BEMP",
+            data=pdf_buffer.getvalue(),
+            file_name="qr_codigos_bemp.pdf",
+            mime="application/pdf"
+        )
 
 def explorer_prod_excel():
     styles(2)
@@ -537,6 +586,5 @@ def explorer_prod_excel():
                     x=1
                 ))
                 st.plotly_chart(fig3)
-"""
 
 

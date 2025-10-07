@@ -530,6 +530,76 @@ def crear_pdf(lista_datos, logo_path):
     buffer.seek(0)
     return buffer
 
+def crear_pdf_qr_bemp(bemp_codes):
+    """
+    Crea un PDF con los códigos QR de los códigos BEMP organizados en grilla
+    Layout: 4 columnas x 4 filas por página (16 QRs por página)
+    """
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Configuración de la grilla - 4 columnas x 4 filas
+    qr_box_width = 140
+    qr_box_height = 160
+    qr_size = 120
+    margin_left = 10
+    margin_top = 10
+    spacing_x = 145  # Espacio horizontal entre recuadros
+    spacing_y = 170  # Espacio vertical entre recuadros
+    
+    # Configuración de grilla: 4 columnas, 4 filas por página (16 QRs por página)
+    cols_per_page = 4
+    rows_per_page = 4
+    qrs_per_page = cols_per_page * rows_per_page
+    
+    # Título en la primera página
+    c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(width/2, height - 30, "CÓDIGOS QR BEMP")
+    
+    # Procesar códigos BEMP
+    for i, code in enumerate(bemp_codes):
+        # Si necesitamos una nueva página (cada 16 QRs)
+        if i > 0 and i % qrs_per_page == 0:
+            c.showPage()
+            c.setFont("Helvetica-Bold", 20)
+            c.drawCentredString(width/2, height - 30, "CÓDIGOS QR BEMP")
+        
+        # Calcular posición en la grilla de la página actual
+        page_index = i % qrs_per_page
+        row = page_index // cols_per_page
+        col = page_index % cols_per_page
+        
+        # Calcular posición del recuadro - reducido espacio desde título
+        x_pos = margin_left + (col * spacing_x)
+        y_pos = height - margin_top - 50 - (row * spacing_y)  # Reducido de 70 a 50
+        
+        # Dibujar recuadro con bordes
+        #c.setStrokeColorRGB(0, 0, 0)
+        #c.setLineWidth(2)
+        #c.rect(x_pos, y_pos - qr_box_height, qr_box_width, qr_box_height, stroke=1, fill=0)
+        
+        # Generar y dibujar QR más grande
+        qr_img = generar_qr(code, box_size=12)
+        qr_buffer = io.BytesIO()
+        qr_img.save(qr_buffer, format="PNG")
+        qr_buffer.seek(0)
+        
+        # Centrar QR en el recuadro
+        qr_x = x_pos + (qr_box_width - qr_size) / 2
+        qr_y = y_pos - 50 - qr_size
+        c.drawImage(ImageReader(qr_buffer), qr_x, qr_y, width=qr_size, height=qr_size)
+        
+        # Dibujar texto del código debajo del QR
+        c.setFont("Helvetica-Bold", 12)
+        text_width = c.stringWidth(code, "Helvetica-Bold", 12)
+        text_x = x_pos + (qr_box_width - text_width) / 2
+        c.drawString(text_x, qr_y - 15, code)  # Texto más pequeño para la grilla 4x4
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 
 def generar_qr(data, box_size=10):
     qr = qrcode.QRCode(
