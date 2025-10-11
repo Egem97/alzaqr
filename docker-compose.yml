@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  format-pdf-qr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Quita container_name para permitir múltiples stacks con -p <nombre>
+    ports:
+      - "${APP_PORT:-8001}:8001"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Uncomment if you want to mount local folders for assets or static files
+    # volumes:
+    #   - ./src/assets:/app/src/assets:ro
+    #   - ./static:/app/static
