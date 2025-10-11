@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
 # Usage:
 #   ./deploy.sh [branch] [port]
@@ -12,16 +12,21 @@ PORT="${2:-8001}"
 PROJECT_NAME="format-pdf-qr"
 
 # Ensure APP_PORT is available for docker-compose interpolation
-printf "APP_PORT=%s\n" "$PORT" > .env
+echo "APP_PORT=$PORT" > .env
 
-# Check docker compose availability
-if ! command -v docker &>/dev/null; then
+# Check docker availability
+if ! command -v docker >/dev/null 2>&1; then
   echo "ERROR: docker no está instalado." >&2
   exit 1
 fi
 
-if ! docker compose version &>/dev/null; then
-  echo "ERROR: docker compose v2 no está disponible." >&2
+# Check docker compose availability (try both v2 and v1)
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_COMPOSE="docker compose"
+elif docker-compose --version >/dev/null 2>&1; then
+  DOCKER_COMPOSE="docker-compose"
+else
+  echo "ERROR: docker compose no está disponible." >&2
   exit 1
 fi
 
@@ -36,9 +41,10 @@ fi
 
 # Build and (re)start container
 echo "==> Construyendo y levantando contenedor ($PROJECT_NAME) en puerto $PORT"
-docker compose -p "$PROJECT_NAME" up -d --build --remove-orphans
+$DOCKER_COMPOSE -p "$PROJECT_NAME" up -d --build --remove-orphans
 
 # Show status
-docker compose -p "$PROJECT_NAME" ps
+$DOCKER_COMPOSE -p "$PROJECT_NAME" ps
 
-echo "\n✅ Despliegue completado. App expuesta en http://<tu-servidor>:$PORT/"
+echo ""
+echo "✅ Despliegue completado. App expuesta en http://<tu-servidor>:$PORT/"
