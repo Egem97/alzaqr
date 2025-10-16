@@ -530,7 +530,7 @@ def crear_pdf(lista_datos, logo_path):
     buffer.seek(0)
     return buffer
 
-def crear_pdf_qr_bemp(bemp_codes):
+def crear_pdf_qr_bemp(bemp_codes, title="CÓDIGOS QR BEMP"):
     """
     Crea un PDF con los códigos QR de los códigos BEMP organizados en grilla
     Layout: 4 columnas x 4 filas por página (16 QRs por página)
@@ -555,7 +555,7 @@ def crear_pdf_qr_bemp(bemp_codes):
     
     # Título en la primera página
     c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(width/2, height - 30, "CÓDIGOS QR BEMP")
+    c.drawCentredString(width/2, height - 30, title)
     
     # Procesar códigos BEMP
     for i, code in enumerate(bemp_codes):

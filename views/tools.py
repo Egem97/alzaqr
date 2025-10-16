@@ -5,7 +5,7 @@ from datetime import datetime
 from styles import styles
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode ,JsCode
 from io import StringIO, BytesIO
-from utils.helpers import crear_pdf, generar_qr
+from utils.helpers import crear_pdf, generar_qr,crear_pdf_qr_bemp
 from utils.components import aggrid_builder
 from utils.g_sheets import read_sheet
 
@@ -686,3 +686,90 @@ def qrgenerator():
                 st.write(f"Máximo: {df['KILOS BRUTO'].max():.2f} kg")
                 st.write(f"Mínimo: {df['KILOS BRUTO'].min():.2f} kg")
 """
+
+def generador_qr_enzunchadores():
+    #LISTA ENZUNCHADORES
+    styles(2)
+    dff = pd.read_excel("LISTA ENZUNCHADORES.xlsx",dtype={"DNI":str})
+    col1, col2 = st.columns([8,4])
+    with col1:
+        st.title("Generador QR Enzunchadores")
+    with col2:
+        select_usuario = st.selectbox("Selecciona un usuario",dff["APELLIDOS Y NOMBRES"].unique(),index=None)
+    if select_usuario!= None:
+        dff = dff[dff["APELLIDOS Y NOMBRES"]==select_usuario]
+        dni = dff["DNI"].values[0]
+        
+        qr_text = []
+        
+        for i in range(1,41):
+  
+            if i<10:
+                ww = dni+"-0"+str(i)
+            else:
+                ww = dni+"-"+str(i)
+            qr_text.append(ww)
+                
+                #qr_img = generar_qr(ww)
+                #img_buffer = BytesIO()
+                #qr_img.save(img_buffer, format='PNG')
+                #img_buffer.seek(0)
+                # Centrar la imagen en la página usando columnas
+                #c_left, c_mid, c_right = st.columns([1, 2, 1])
+                #with c_mid:
+                #    st.image(img_buffer, width=450, use_column_width=False)
+                #    st.markdown(f"<h2 style='text-align: center;'>{ww}</h2>", unsafe_allow_html=True)
+        #st.write(qr_text)
+        
+        pdf_buffer = crear_pdf_qr_bemp(qr_text,select_usuario)
+        st.download_button(
+                label="📥 Descargar PDF Ensunchadores",
+                data=pdf_buffer.getvalue(),
+                file_name=f"qr_codigos_ensunchadores_{select_usuario}.pdf",
+                mime="application/pdf"
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        select_usuario = st.selectbox("Selecciona un usuario",dff["APELLIDOS Y NOMBRES"].unique(),index=None)
+        if select_usuario!= None:
+            usuario = dff[dff["APELLIDOS Y NOMBRES"]==select_usuario]
+            dni_text = usuario["DNI"].values[0]
+    with col2:
+        select_turno = st.selectbox("Selecciona un turno",["DIA","NOCHE"])
+    with col3:
+        select_date = st.date_input("Selecciona una fecha")
+        st.write(select_date)
+    
+    try:
+        ww = dni_text+"-"+select_turno+"-"+select_date.strftime("%Y%m%d")
+        st.write(ww)
+        qr_img = generar_qr(ww)
+        img_buffer = BytesIO()
+        qr_img.save(img_buffer, format='PNG')
+        img_buffer.seek(0)
+        # Centrar la imagen en la página usando columnas
+        c_left, c_mid, c_right = st.columns([1, 2, 1])
+        with c_mid:
+            st.image(img_buffer, width=450, use_column_width=False)
+            st.markdown(f"<h2 style='text-align: center;'>{ww}</h2>", unsafe_allow_html=True)
+    except:
+        st.error("Debe seleccionar Trabajador")
+"""
+        
+    
+   
+    
+    

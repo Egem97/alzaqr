@@ -1,6 +1,6 @@
 import streamlit as st
 
-from views.tools import qrtool, dashboard, qrgenerator
+from views.tools import qrtool, dashboard, qrgenerator,generador_qr_enzunchadores
 from views.prod import explorer_prod_excel, tunel_qr_enfiramiento, bemp_qr_generator
 from views.despacho import packing_list,packing_list_testing
 from views.gestion_humana_ import gestion_humana_packing
@@ -26,6 +26,7 @@ def pages():
         st.Page(page = packing_list_testing,title="Packing List Testing",icon = "📄")
     ]
     page_dict["Gestión Humana"] = [
-        st.Page(page = gestion_humana_packing,title="Gestión Humana.",icon = "👥")
+        st.Page(page = gestion_humana_packing,title="Gestión Humana.",icon = "👥"),
+        st.Page(page = generador_qr_enzunchadores,title="Generador QR Enzunchadores",icon = "🔧")
     ]
     return page_dict
