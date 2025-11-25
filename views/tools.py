@@ -780,9 +780,26 @@ def json_transform():
             # Leer archivo JSON
             df = pd.read_json(uploaded_file)
             
-            st.success("Archivo JSON cargado correctamente")
+            #st.success("Archivo JSON cargado correctamente")
             
-            
+            # Lógica para estructurar la columna específica
+            select_columns = st.selectbox("Selecciona Columna Tabla",df.columns, index = None)
+            if select_columns:
+                    with st.spinner("Estructurando datos..."):
+                        # Explode para separar la lista de personas en filas individuales
+                        df = df.explode(select_columns)
+                        df = df.reset_index(drop=True)
+                        
+                        # Normalizar los datos de la columna (diccionarios a columnas)
+                        valid_rows = df[select_columns].notna()
+                        if valid_rows.any():
+                            # Extraer los diccionarios y convertirlos en un DataFrame
+                            normalized = pd.json_normalize(df.loc[valid_rows, select_columns])
+                            normalized.index = df.loc[valid_rows].index
+                            
+                            # Unir con el DataFrame original y eliminar la columna antigua
+                            df = df.drop(columns=[select_columns]).join(normalized)
+                            st.success(f"Columna '{select_columns}' estructurada correctamente")
 
             st.subheader("Vista previa de datos")
             st.dataframe(df)
