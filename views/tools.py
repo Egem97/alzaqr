@@ -768,8 +768,74 @@ def generador_qr_enzunchadores():
     except:
         st.error("Debe seleccionar Trabajador")
 """
-        
+
+def json_transform():
+    styles(2)
+    st.title("Transformador JSON a Excel")
     
-   
+    uploaded_file = st.file_uploader("Cargar archivo JSON", type=['json'])
     
-    
+    if uploaded_file is not None:
+        try:
+            # Leer archivo JSON
+            df = pd.read_json(uploaded_file)
+            
+            st.success("Archivo JSON cargado correctamente")
+            
+            
+
+            st.subheader("Vista previa de datos")
+            st.dataframe(df)
+            
+            # Convertir a Excel con formato de tabla
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                sheet_name = 'Datos'
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                
+                workbook = writer.book
+                worksheet = writer.sheets[sheet_name]
+                
+                (max_row, max_col) = df.shape
+                
+                # Definir columnas para la tabla
+                column_settings = [{'header': str(col)} for col in df.columns]
+                
+                # Agregar la tabla con el estilo solicitado
+                # El rango es desde (0,0) hasta (max_row, max_col-1)
+                # max_row coincide con el índice de la última fila porque la fila 0 es el encabezado
+                if max_row > 0:
+                    worksheet.add_table(0, 0, max_row, max_col - 1, {
+                        'columns': column_settings,
+                        'style': 'Table Style Light 9'
+                    })
+                    
+                    # Ajustar ancho de columnas
+                    for i, col in enumerate(df.columns):
+                        # Calcular ancho basado en el contenido y el encabezado
+                        # Se usa try/except para evitar errores con tipos de datos extraños
+                        try:
+                            max_len = max(
+                                df[col].astype(str).map(len).max() if not df[col].empty else 0,
+                                len(str(col))
+                            )
+                            # Limitar el ancho máximo para que no sea excesivo
+                            final_width = min(max_len + 2, 50)
+                            worksheet.set_column(i, i, final_width)
+                        except:
+                            pass
+            
+            excel_data = output.getvalue()
+            
+            st.download_button(
+                label="📥 Descargar como Excel",
+                data=excel_data,
+                file_name="data_transformada.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            
+        except ValueError as e:
+            st.error(f"Error de formato JSON: {str(e)}")
+        except Exception as e:
+            st.error(f"Error al procesar el archivo: {str(e)}")
+

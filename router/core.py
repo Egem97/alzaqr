@@ -1,6 +1,6 @@
 import streamlit as st
 
-from views.tools import qrtool, dashboard, qrgenerator,generador_qr_enzunchadores
+from views.tools import qrtool, dashboard, qrgenerator,generador_qr_enzunchadores,json_transform
 from views.prod import explorer_prod_excel, tunel_qr_enfiramiento, bemp_qr_generator
 from views.despacho import packing_list,packing_list_testing
 from views.gestion_humana_ import gestion_humana_packing
@@ -17,6 +17,7 @@ def pages():
     ]
     page_dict["Producción"] = [
         st.Page(page = explorer_prod_excel,title="Explorer Data",icon = "📈"),
+        st.Page(page = json_transform,title="Transformador JSON",icon = "📄"),
         
     ]
     page_dict["Despacho"] = [
